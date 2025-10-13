@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Availability Status{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Availability Submission Status</h2>
+            <p class="text-muted">Track which employees have submitted their availability</p>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Update Range</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Total Employees</h5>
+                    <h2 class="text-primary">{{ employee_status|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Fully Submitted</h5>
+                    <h2 class="text-success">{{ employee_status|length|add:employees_pending|length|add:"-"|add:employees_pending|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Submissions</h5>
+                    <h2 class="text-warning">{{ employees_pending|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Reminder Button -->
+    {% if employees_pending %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ employees_pending|length }} employee(s)</strong> have not completed their availability submission.
+                <br>
+                <small>Period: {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }} ({{ total_shifts }} shifts)</small>
+            </div>
+            <form method="POST" onsubmit="return confirm('Send reminder emails to {{ employees_pending|length }} employee(s)?');">
+                {% csrf_token %}
+                <button type="submit" name="send_reminders" class="btn btn-warning">
+                    <i class="bi bi-envelope"></i> Send Reminder Emails
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success mb-4">
+        <strong>All employees have submitted their availability!</strong>
+    </div>
+    {% endif %}
+
+    <!-- Employee Status Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Employee Submission Status</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Rank</th>
+                            <th>Email</th>
+                            <th>Progress</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status in employee_status %}
+                        <tr class="{% if status.is_complete %}table-success{% elif status.submitted_count == 0 %}table-warning{% endif %}">
+                            <td>
+                                <a href="{% url 'employee-detail' status.employee.pk %}">
+                                    {{ status.employee.first_name }} {{ status.employee.last_name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ status.employee.get_rank_display }}</span>
+                            </td>
+                            <td>{{ status.employee.email }}</td>
+                            <td>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar {% if status.is_complete %}bg-success{% elif status.percentage >= 50 %}bg-info{% else %}bg-warning{% endif %}"
+                                         role="progressbar"
+                                         style="width: {{ status.percentage }}%;"
+                                         aria-valuenow="{{ status.percentage }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        {{ status.percentage }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ status.submitted_count }} / {{ status.total_shifts }}
+                            </td>
+                            <td>
+                                {% if status.is_complete %}
+                                    <span class="badge bg-success">Complete</span>
+                                {% elif status.submitted_count == 0 %}
+                                    <span class="badge bg-danger">Not Started</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No employees found or no shifts in the selected date range.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

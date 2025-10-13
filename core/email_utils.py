@@ -77,7 +77,7 @@ def send_email_notification(email_type, subject, recipient, context, sent_by=Non
         return False
 
 
-def send_availability_reminder(employees, shifts, sent_by=None):
+def send_availability_reminder(employees, shifts, sent_by=None, request=None):
     """
     Send availability reminder to employees who haven't submitted
 
@@ -85,10 +85,13 @@ def send_availability_reminder(employees, shifts, sent_by=None):
         employees: QuerySet or list of Employee objects
         shifts: QuerySet or list of Shift objects they need to submit for
         sent_by: Employee who triggered the email
+        request: HTTP request object for URL generation (optional)
 
     Returns:
         Tuple of (success_count, fail_count)
     """
+    from django.conf import settings
+
     success_count = 0
     fail_count = 0
 
@@ -97,6 +100,20 @@ def send_availability_reminder(employees, shifts, sent_by=None):
             'employee': employee,
             'shifts': shifts,
         }
+
+        # Add request-like context if not provided
+        if request:
+            context['request'] = request
+        else:
+            # Create a mock request object for URL generation
+            class MockRequest:
+                def __init__(self):
+                    self.scheme = 'http'
+
+                def get_host(self):
+                    return settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
+
+            context['request'] = MockRequest()
 
         subject = 'Reminder: Submit Your Availability'
 
@@ -108,7 +125,7 @@ def send_availability_reminder(employees, shifts, sent_by=None):
     return success_count, fail_count
 
 
-def send_schedule_published_notification(employees, start_date, end_date, sent_by=None):
+def send_schedule_published_notification(employees, start_date, end_date, sent_by=None, request=None):
     """
     Notify employees that a new schedule has been published
 
@@ -117,10 +134,13 @@ def send_schedule_published_notification(employees, start_date, end_date, sent_b
         start_date: Schedule start date
         end_date: Schedule end date
         sent_by: Employee who triggered the email
+        request: HTTP request object for URL generation (optional)
 
     Returns:
         Tuple of (success_count, fail_count)
     """
+    from django.conf import settings
+
     success_count = 0
     fail_count = 0
 
@@ -130,6 +150,20 @@ def send_schedule_published_notification(employees, start_date, end_date, sent_b
             'start_date': start_date,
             'end_date': end_date,
         }
+
+        # Add request-like context if not provided
+        if request:
+            context['request'] = request
+        else:
+            # Create a mock request object for URL generation
+            class MockRequest:
+                def __init__(self):
+                    self.scheme = 'http'
+
+                def get_host(self):
+                    return settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
+
+            context['request'] = MockRequest()
 
         subject = f'New Schedule Published: {start_date.strftime("%b %d")} - {end_date.strftime("%b %d, %Y")}'
 
@@ -141,7 +175,7 @@ def send_schedule_published_notification(employees, start_date, end_date, sent_b
     return success_count, fail_count
 
 
-def send_shift_assignment_notification(employee, assignments, sent_by=None):
+def send_shift_assignment_notification(employee, assignments, sent_by=None, request=None):
     """
     Notify an employee about their shift assignments
 
@@ -149,14 +183,31 @@ def send_shift_assignment_notification(employee, assignments, sent_by=None):
         employee: Employee object
         assignments: QuerySet or list of ShiftAssignment objects
         sent_by: Employee who triggered the email
+        request: HTTP request object for URL generation (optional)
 
     Returns:
         Boolean indicating success
     """
+    from django.conf import settings
+
     context = {
         'employee': employee,
         'assignments': assignments,
     }
+
+    # Add request-like context if not provided
+    if request:
+        context['request'] = request
+    else:
+        # Create a mock request object for URL generation
+        class MockRequest:
+            def __init__(self):
+                self.scheme = 'http'
+
+            def get_host(self):
+                return settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
+
+        context['request'] = MockRequest()
 
     subject = 'You\'ve Been Assigned to Shifts'
 

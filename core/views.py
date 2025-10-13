@@ -438,6 +438,92 @@ class ShiftDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 # Availability Views
 @login_required
+def availability_status(request):
+    """Show employee availability submission status and send reminders (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can view availability status.')
+        return redirect('dashboard')
+
+    # Get date range from GET parameters or default to next 2 weeks
+    today = timezone.now().date()
+    start_date_param = request.GET.get('start_date')
+    end_date_param = request.GET.get('end_date')
+
+    if start_date_param and end_date_param:
+        start_date = datetime.strptime(start_date_param, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_param, '%Y-%m-%d').date()
+    else:
+        start_date = today
+        end_date = start_date + timedelta(days=13)  # Two weeks
+
+    # Get all shifts in this date range
+    shifts = Shift.objects.filter(
+        date__gte=start_date,
+        date__lte=end_date
+    ).order_by('date', 'shift_type__start_time')
+
+    # Get all active employees
+    all_employees = Employee.objects.filter(is_active=True).order_by('last_name', 'first_name')
+
+    # For each employee, check if they've submitted availability for all shifts
+    employee_status = []
+    employees_pending = []
+
+    for employee in all_employees:
+        submitted_count = EmployeeAvailability.objects.filter(
+            employee=employee,
+            shift__in=shifts
+        ).count()
+
+        total_shifts = shifts.count()
+        is_complete = submitted_count == total_shifts
+
+        employee_status.append({
+            'employee': employee,
+            'submitted_count': submitted_count,
+            'total_shifts': total_shifts,
+            'is_complete': is_complete,
+            'percentage': int((submitted_count / total_shifts * 100) if total_shifts > 0 else 0)
+        })
+
+        if not is_complete:
+            employees_pending.append(employee)
+
+    # Handle POST request to send reminder emails
+    if request.method == 'POST':
+        if 'send_reminders' in request.POST:
+            from .email_utils import send_availability_reminder
+
+            success_count, fail_count = send_availability_reminder(
+                employees_pending,
+                shifts,
+                sent_by=request.user,
+                request=request
+            )
+
+            messages.success(
+                request,
+                f'Reminder emails sent successfully to {success_count} employee(s)!'
+            )
+
+            if fail_count > 0:
+                messages.warning(
+                    request,
+                    f'{fail_count} email(s) failed to send. Check email logs for details.'
+                )
+
+            return redirect('availability-status')
+
+    return render(request, 'core/availability_status.html', {
+        'employee_status': employee_status,
+        'employees_pending': employees_pending,
+        'start_date': start_date,
+        'end_date': end_date,
+        'total_shifts': shifts.count(),
+    })
+
+
+@login_required
 def availability_submit(request, shift_id):
     """Submit availability for a single shift"""
     shift = get_object_or_404(Shift, id=shift_id)
@@ -741,18 +827,50 @@ def publish_schedule(request, config_id):
     if not is_manager(request.user):
         messages.error(request, 'Only managers can publish schedules.')
         return redirect('dashboard')
-    
+
     config = get_object_or_404(ScheduleConfig, id=config_id)
-    
+
     if config.status != 'completed':
         messages.error(request, 'Only completed schedules can be published.')
         return redirect('schedule-view', config_id=config.id)
-    
-    config.status = 'published'
-    config.save()
-    
-    messages.success(request, 'Schedule published successfully!')
-    return redirect('schedule-view', config_id=config.id)
+
+    # Handle POST request to send notification emails
+    if request.method == 'POST':
+        if 'send_notifications' in request.POST:
+            from .email_utils import send_schedule_published_notification
+
+            # Get all active employees
+            employees = Employee.objects.filter(is_active=True)
+
+            success_count, fail_count = send_schedule_published_notification(
+                employees,
+                config.start_date,
+                config.end_date,
+                sent_by=request.user,
+                request=request
+            )
+
+            messages.success(
+                request,
+                f'Schedule published and notification emails sent to {success_count} employee(s)!'
+            )
+
+            if fail_count > 0:
+                messages.warning(
+                    request,
+                    f'{fail_count} email(s) failed to send. Check email logs for details.'
+                )
+
+        # Mark as published
+        config.status = 'published'
+        config.save()
+
+        return redirect('schedule-view', config_id=config.id)
+
+    # GET request - show confirmation page
+    return render(request, 'core/schedule_publish_confirm.html', {
+        'config': config
+    })
 
 
 # Assignment Management Views
@@ -1070,4 +1188,46 @@ def apply_template(request):
 
     return render(request, 'core/apply_template.html', {
         'form': form
+    })
+
+
+# Email Log View
+@login_required
+def email_log_list(request):
+    """View email logs (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can view email logs.')
+        return redirect('dashboard')
+
+    # Get filter parameters
+    email_type = request.GET.get('type')
+    success_filter = request.GET.get('success')
+
+    # Start with all logs
+    logs = EmailLog.objects.all().select_related('sent_by')
+
+    # Apply filters
+    if email_type:
+        logs = logs.filter(email_type=email_type)
+
+    if success_filter == 'true':
+        logs = logs.filter(success=True)
+    elif success_filter == 'false':
+        logs = logs.filter(success=False)
+
+    # Paginate results
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)  # Show 50 logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get available email types for filter dropdown
+    from .models import EmailLog
+    email_types = EmailLog.EMAIL_TYPE_CHOICES
+
+    return render(request, 'core/email_log_list.html', {
+        'page_obj': page_obj,
+        'email_types': email_types,
+        'current_type': email_type,
+        'current_success': success_filter,
     })

@@ -28,6 +28,10 @@ urlpatterns = [
     # Availability URLs
     path('availability/', views.availability_calendar, name='availability-calendar'),
     path('availability/<int:shift_id>/', views.availability_submit, name='availability-submit'),
+    path('availability/status/', views.availability_status, name='availability-status'),
+
+    # Email Logs
+    path('emails/logs/', views.email_log_list, name='email-log-list'),
     
     # Schedule URLs
     path('schedule/', views.schedule_view, name='schedule-view'),

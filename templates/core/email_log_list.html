@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Logs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Email Logs</h2>
+            <p class="text-muted">View all emails sent by the system</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="type" class="form-label">Email Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">All Types</option>
+                        {% for value, label in email_types %}
+                        <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="success" class="form-label">Status</label>
+                    <select class="form-select" id="success" name="success">
+                        <option value="">All</option>
+                        <option value="true" {% if current_success == 'true' %}selected{% endif %}>Successful</option>
+                        <option value="false" {% if current_success == 'false' %}selected{% endif %}>Failed</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'email-log-list' %}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Total Emails</h5>
+                    <h2 class="text-primary">{{ page_obj.paginator.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Successful</h5>
+                    <h2 class="text-success">{{ page_obj.object_list|selectattr:"success"|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Failed</h5>
+                    <h2 class="text-danger">{{ page_obj.object_list|rejectattr:"success"|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Logs Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Type</th>
+                            <th>Subject</th>
+                            <th>Recipient</th>
+                            <th>Sent By</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                        <tr class="{% if not log.success %}table-danger{% endif %}">
+                            <td>
+                                <small>{{ log.sent_at|date:"M d, Y" }}</small><br>
+                                <small class="text-muted">{{ log.sent_at|date:"H:i:s" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ log.get_email_type_display }}</span>
+                            </td>
+                            <td>{{ log.subject }}</td>
+                            <td>
+                                <strong>{{ log.recipient_name|default:"N/A" }}</strong><br>
+                                <small class="text-muted">{{ log.recipient_email }}</small>
+                            </td>
+                            <td>
+                                {% if log.sent_by %}
+                                    {{ log.sent_by.first_name }} {{ log.sent_by.last_name }}
+                                {% else %}
+                                    <span class="text-muted">System</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.success %}
+                                    <span class="badge bg-success">Sent</span>
+                                {% else %}
+                                    <span class="badge bg-danger"
+                                          data-bs-toggle="tooltip"
+                                          title="{{ log.error_message }}">
+                                        Failed
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No email logs found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if current_type %}&type={{ current_type }}{% endif %}{% if current_success %}&success={{ current_success }}{% endif %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_success %}&success={{ current_success }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_success %}&success={{ current_success }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_success %}&success={{ current_success }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize Bootstrap tooltips for error messages
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+{% endblock %}
