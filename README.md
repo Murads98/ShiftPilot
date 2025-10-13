@@ -38,7 +38,7 @@ ShiftPilot is a Django web application that uses Claude AI (Anthropic's language
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Murads98/ShiftPilot.git
    cd ShiftPilot
    ```
 
