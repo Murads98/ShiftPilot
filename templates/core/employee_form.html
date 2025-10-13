@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% load form_tags %}
+
+{% block title %}
+{% if form.instance.id %}Edit Employee{% else %}Add Employee{% endif %} - ShiftPilot
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    {% if form.instance.id %}Edit Employee: {{ form.instance.first_name }} {{ form.instance.last_name }}{% else %}Add New Employee{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in field.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'employee-list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.id %}Save Changes{% else %}Add Employee{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

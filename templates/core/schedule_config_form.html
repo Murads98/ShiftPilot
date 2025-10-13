@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Generate Schedule - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Generate New Schedule</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate id="scheduleForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Schedule Name</label>
+                        {{ form.name }}
+                        <style>
+                            #{{ form.name.id_for_label }} {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #212529;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                            }
+                        </style>
+                        {% if form.name.errors %}
+                        <div class="text-danger">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                            {{ form.start_date }}
+                            <style>
+                                #{{ form.start_date.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                            {% if form.start_date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.start_date.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                            {{ form.end_date }}
+                            <style>
+                                #{{ form.end_date.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                            {% if form.end_date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.end_date.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">🤖 AI-Powered Schedule Generation</h6>
+                        <p class="mb-0">
+                            When you create this schedule, Claude AI will analyze employee availability, shift requirements, 
+                            and rank constraints to generate optimal staff assignments. The process considers availability preferences, 
+                            fair distribution of shifts, and ensures all requirements are met.
+                        </p>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'schedule-config-list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" id="createScheduleBtn">
+                            🚀 Create & Generate Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="claudeLoadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-4" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="mb-3">🤖 Claude is cooking your schedule...</h4>
+                <p class="text-muted mb-4">Analyzing shifts, employee availability, and creating optimal assignments</p>
+                <div class="progress mb-3" style="height: 6px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                </div>
+                <small class="text-muted">This usually takes 10-30 seconds</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('scheduleForm');
+    const modal = new bootstrap.Modal(document.getElementById('claudeLoadingModal'));
+    
+    form.addEventListener('submit', function(e) {
+        // Show the loading modal immediately when form is submitted
+        modal.show();
+    });
+});
+</script>
+{% endblock %}

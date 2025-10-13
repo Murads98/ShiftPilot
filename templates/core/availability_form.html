@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load form_tags %}
+
+{% block title %}Set Availability - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Set Availability for Shift</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="alert-heading mb-0">Shift Details</h6>
+                            <p class="mb-0">
+                                {{ shift.date|date:"D, M d, Y" }} | 
+                                {{ shift.shift_type.name }} | 
+                                {{ shift.shift_type.start_time|time:"H:i" }} - 
+                                {{ shift.shift_type.end_time|time:"H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Your Availability</label>
+                        
+                        <div class="mt-2">
+                            <div class="form-check mb-2">
+                                <input type="radio" name="{{ form.availability_status.name }}" id="availability_available" value="available" 
+                                       class="form-check-input" {% if form.availability_status.value == 'available' %}checked{% endif %}>
+                                <label class="form-check-label d-flex align-items-center" for="availability_available">
+                                    <span class="badge bg-success me-2">Available</span>
+                                    <span>I can work this shift</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-2">
+                                <input type="radio" name="{{ form.availability_status.name }}" id="availability_prefer_not" value="prefer_not" 
+                                       class="form-check-input" {% if form.availability_status.value == 'prefer_not' %}checked{% endif %}>
+                                <label class="form-check-label d-flex align-items-center" for="availability_prefer_not">
+                                    <span class="badge bg-warning me-2">Prefer Not</span>
+                                    <span>I'd rather not work this shift, but can if needed</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check">
+                                <input type="radio" name="{{ form.availability_status.name }}" id="availability_unavailable" value="unavailable" 
+                                       class="form-check-input" {% if form.availability_status.value == 'unavailable' %}checked{% endif %}>
+                                <label class="form-check-label d-flex align-items-center" for="availability_unavailable">
+                                    <span class="badge bg-danger me-2">Unavailable</span>
+                                    <span>I cannot work this shift</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        {% if form.availability_status.errors %}
+                        <div class="text-danger mt-2">
+                            {% for error in form.availability_status.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'availability-calendar' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Availability</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Availability Calendar - ShiftPilot{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-day {
+        min-height: 120px;
+        border: 1px solid #e9ecef;
+        padding: 10px;
+    }
+    .calendar-date {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .calendar-shift {
+        margin-bottom: 8px;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+    }
+    .availability-available {
+        border-left: 4px solid #28a745;
+    }
+    .availability-prefer-not {
+        border-left: 4px solid #ffc107;
+    }
+    .availability-unavailable {
+        border-left: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Availability Calendar</h1>
+        <p class="lead">Set your availability for upcoming shifts</p>
+    </div>
+    <div class="col-auto">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Update View</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="d-flex gap-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2" style="width: 20px; height: 20px; background-color: #28a745; border-radius: 3px;"></div>
+                                    <span>Available</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2" style="width: 20px; height: 20px; background-color: #ffc107; border-radius: 3px;"></div>
+                                    <span>Prefer Not</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2" style="width: 20px; height: 20px; background-color: #dc3545; border-radius: 3px;"></div>
+                                    <span>Unavailable</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row row-cols-1 row-cols-md-7">
+                        {% for date, shifts in shifts_by_date.items %}
+                        <div class="col mb-3">
+                            <div class="calendar-day">
+                                <div class="calendar-date">{{ date|date:"D, M d" }}</div>
+                                
+                                {% for shift_info in shifts %}
+                                <div class="calendar-shift {% if shift_info.availability.availability_status == 'available' %}availability-available{% elif shift_info.availability.availability_status == 'prefer_not' %}availability-prefer-not{% elif shift_info.availability.availability_status == 'unavailable' %}availability-unavailable{% endif %}">
+                                    <div class="fw-bold">{{ shift_info.shift.shift_type.name }}</div>
+                                    <div class="small text-muted">{{ shift_info.shift.shift_type.start_time|time:"H:i" }} - {{ shift_info.shift.shift_type.end_time|time:"H:i" }}</div>
+                                    
+                                    <div class="mt-2">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- Replace complex filter chain with hardcoded values -->
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_available" value="available" 
+                                                {% if shift_info.availability.availability_status == 'available' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_available">Available</label>
+                                            
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_prefer_not" value="prefer_not" 
+                                                {% if shift_info.availability.availability_status == 'prefer_not' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_prefer_not">Prefer Not</label>
+                                            
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_unavailable" value="unavailable" 
+                                                {% if shift_info.availability.availability_status == 'unavailable' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_unavailable">Unavailable</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="small text-muted">No shifts scheduled</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="submit" class="btn btn-primary">Save Availability</button>
+    </div>
+</form>
+{% endblock %}

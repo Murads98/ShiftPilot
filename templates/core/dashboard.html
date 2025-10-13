@@ -1,0 +1,180 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Dashboard - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Welcome, {{ user.first_name|default:user.username }}!</h1>
+    </div>
+    
+    <!-- Upcoming Shifts Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Your Upcoming Shifts</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_shifts %}
+                <div class="list-group">
+                    {% for assignment in upcoming_shifts %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ assignment.shift.shift_type.name }}</h6>
+                            <small>{{ assignment.shift.date|date:"D, M d" }}</small>
+                        </div>
+                        <p class="mb-1">{{ assignment.shift.shift_type.start_time|time:"H:i" }} - {{ assignment.shift.shift_type.end_time|time:"H:i" }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'schedule-view' %}" class="btn btn-primary">View Full Schedule</a>
+                </div>
+                {% else %}
+                <p class="card-text">You don't have any upcoming shifts scheduled.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Availability Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="card-title mb-0">Pending Availability Requests</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_availability %}
+                <div class="list-group">
+                    {% for shift in pending_availability %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ shift.shift_type.name }}</h6>
+                            <small>{{ shift.date|date:"D, M d" }}</small>
+                        </div>
+                        <p class="mb-1">{{ shift.shift_type.start_time|time:"H:i" }} - {{ shift.shift_type.end_time|time:"H:i" }}</p>
+                        <div class="mt-2">
+                            <a href="{% url 'availability-submit' shift.id %}" class="btn btn-sm btn-warning">Submit Availability</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'availability-calendar' %}" class="btn btn-warning">Update All Availability</a>
+                </div>
+                {% else %}
+                <p class="card-text">No pending availability requests.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if user.is_staff or user.rank >= 4 %}
+    <!-- Manager Section -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Manager Tools</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col">
+                        <div class="d-grid gap-2 d-md-flex">
+                            <a href="{% url 'employee-list' %}" class="btn btn-outline-primary">Manage Employees</a>
+                            <a href="{% url 'shift-type-list' %}" class="btn btn-outline-primary">Manage Shift Types</a>
+                            <a href="{% url 'shift-list' %}" class="btn btn-outline-primary">Manage Shifts</a>
+                            <a href="{% url 'schedule-config-create' %}" class="btn btn-success">Create New Schedule</a>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if recent_schedules %}
+                <h5 class="card-title mt-4">Recent Schedules</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Dates</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for config in recent_schedules %}
+                            <tr>
+                                <td>{{ config.name }}</td>
+                                <td>{{ config.start_date|date:"M d" }} - {{ config.end_date|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if config.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                    {% elif config.status == 'processing' %}
+                                    <span class="badge bg-info">Processing</span>
+                                    {% elif config.status == 'completed' %}
+                                    <span class="badge bg-primary">Completed</span>
+                                    {% elif config.status == 'published' %}
+                                    <span class="badge bg-success">Published</span>
+                                    {% elif config.status == 'error' %}
+                                    <span class="badge bg-danger">Error</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'schedule-view' config.id %}" class="btn btn-outline-primary">View</a>
+                                        {% if config.status == 'draft' %}
+                                        <a href="{% url 'generate-schedule' config.id %}" class="btn btn-outline-success">Generate</a>
+                                        {% elif config.status == 'completed' %}
+                                        <a href="{% url 'publish-schedule' config.id %}" class="btn btn-outline-success">Publish</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                
+                {% if understaffed_shifts %}
+                <h5 class="card-title mt-4">Understaffed Shifts</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Staffing Needs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in understaffed_shifts %}
+                            <tr>
+                                <td>{{ shift.date|date:"D, M d" }}</td>
+                                <td>{{ shift.shift_type.name }}<br>
+                                    <small class="text-muted">{{ shift.shift_type.start_time|time:"H:i" }} - {{ shift.shift_type.end_time|time:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    Needs {{ shift.total_required_staff }} staff
+                                    <ul class="mb-0 small">
+                                        {% if shift.required_rank_4 %}<li>{{ shift.required_rank_4 }} rank 4</li>{% endif %}
+                                        {% if shift.required_rank_3 %}<li>{{ shift.required_rank_3 }} rank 3</li>{% endif %}
+                                        {% if shift.required_rank_2 %}<li>{{ shift.required_rank_2 }} rank 2</li>{% endif %}
+                                        {% if shift.required_rank_1 %}<li>{{ shift.required_rank_1 }} rank 1</li>{% endif %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <a href="{% url 'assignment-create-for-shift' shift.id %}" class="btn btn-sm btn-primary">Assign Staff</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Schedule Configurations - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Schedule Configurations</h1>
+    <a href="{% url 'schedule-config-create' %}" class="btn btn-primary">Create New Schedule</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date Range</th>
+                        <th>Status</th>
+                        <th>Created By</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for config in configs %}
+                    <tr>
+                        <td>{{ config.name }}</td>
+                        <td>{{ config.start_date|date:"M d, Y" }} - {{ config.end_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if config.status == 'draft' %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% elif config.status == 'processing' %}
+                            <span class="badge bg-info">Processing</span>
+                            {% elif config.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                            {% elif config.status == 'published' %}
+                            <span class="badge bg-success">Published</span>
+                            {% elif config.status == 'error' %}
+                            <span class="badge bg-danger">Error</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ config.created_by.get_full_name|default:config.created_by.username }}</td>
+                        <td>{{ config.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'schedule-view' config.id %}" class="btn btn-outline-primary">View</a>
+                                {% if config.status == 'draft' %}
+                                <a href="{% url 'generate-schedule' config.id %}" class="btn btn-outline-success generate-btn">🤖 Generate</a>
+                                {% elif config.status == 'completed' %}
+                                <a href="{% url 'publish-schedule' config.id %}" class="btn btn-outline-success">Publish</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">No schedule configurations found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="claudeLoadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-4" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="mb-3">🤖 Hold on, Claude is cooking...</h4>
+                <p class="text-muted mb-4">
+                    Analyzing employee availability, shift requirements, and rank constraints to create optimal assignments
+                </p>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
+                </div>
+                <small class="text-muted">This usually takes 10-30 seconds</small>
+                <br>
+                <small class="text-muted mt-2">🧠 AI is considering availability preferences, rank requirements, and fair distribution</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all "Generate" buttons
+    const generateButtons = document.querySelectorAll('.generate-btn');
+    const modal = new bootstrap.Modal(document.getElementById('claudeLoadingModal'));
+    
+    generateButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Show the loading modal immediately when Generate is clicked
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

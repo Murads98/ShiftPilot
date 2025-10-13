@@ -1,0 +1,182 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Schedule - ShiftPilot{% endblock %}
+
+{% block extra_css %}
+<style>
+    .day-column {
+        min-width: 220px;
+    }
+    .shift-card {
+        margin-bottom: 8px;
+        border-radius: 4px;
+    }
+    .shift-card .card-header {
+        padding: 0.5rem 1rem;
+    }
+    .shift-card .card-body {
+        padding: 0.5rem 1rem;
+    }
+    .staff-badge {
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+    .staff-badge.rank-1 {
+        background-color: #6c757d;
+    }
+    .staff-badge.rank-2 {
+        background-color: #0d6efd;
+    }
+    .staff-badge.rank-3 {
+        background-color: #6f42c1;
+    }
+    .staff-badge.rank-4 {
+        background-color: #fd7e14;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Schedule{% if config %}: {{ config.name }}{% endif %}</h1>
+    <div class="btn-group">
+        {% if config and config.status == 'completed' and user.is_staff %}
+        <a href="{% url 'publish-schedule' config.id %}" class="btn btn-success">Publish Schedule</a>
+        {% endif %}
+        {% if user.is_staff %}
+        <a href="{% url 'schedule-config-create' %}" class="btn btn-primary">Generate New Schedule</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Date Range</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Update View</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if config %}
+<div class="card mb-4">
+    <div class="card-header {% if config.status == 'published' %}bg-success text-white{% elif config.status == 'completed' %}bg-primary text-white{% elif config.status == 'processing' %}bg-info text-white{% elif config.status == 'error' %}bg-danger text-white{% else %}bg-secondary text-white{% endif %}">
+        <h5 class="card-title mb-0">Schedule Status: {{ config.get_status_display }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong>Created By:</strong> {{ config.created_by.get_full_name|default:config.created_by.username }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Created At:</strong> {{ config.created_at|date:"M d, Y H:i" }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Date Range:</strong> {{ config.start_date|date:"M d, Y" }} - {{ config.end_date|date:"M d, Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if config.claude_response %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-robot"></i> Claude's AI Reasoning
+            <button class="btn btn-sm btn-outline-light float-end" type="button" data-bs-toggle="collapse" data-bs-target="#claudeReasoning" aria-expanded="false">
+                Show/Hide
+            </button>
+        </h5>
+    </div>
+    <div class="collapse" id="claudeReasoning">
+        <div class="card-body">
+            <pre class="bg-light p-3 rounded" style="white-space: pre-wrap; font-size: 14px;">{{ config.claude_response }}</pre>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="table-responsive">
+    <div class="d-flex">
+        {% for date, shift_list in shifts_by_date.items %}
+        <div class="day-column">
+            <div class="card mb-2">
+                <div class="card-header bg-light text-center">
+                    <strong>{{ date|date:"D, M d" }}</strong>
+                </div>
+                <div class="card-body p-2">
+                    {% for shift_info in shift_list %}
+                    <div class="card shift-card {% if shift_info.is_fully_staffed %}border-success{% else %}border-warning{% endif %}">
+                        <div class="card-header {% if shift_info.is_fully_staffed %}bg-success text-white{% else %}bg-warning{% endif %} d-flex justify-content-between align-items-center">
+                            <span>{{ shift_info.shift.shift_type.name }}</span>
+                            <small>{{ shift_info.shift.shift_type.start_time|time:"H:i" }} - {{ shift_info.shift.shift_type.end_time|time:"H:i" }}</small>
+                        </div>
+                        <div class="card-body">
+                            <p class="small mb-1">
+                                <strong>Required:</strong> {{ shift_info.shift.total_required_staff }} staff
+                                {% if shift_info.shift.required_rank_1 or shift_info.shift.required_rank_2 or shift_info.shift.required_rank_3 or shift_info.shift.required_rank_4 %}
+                                <br><small class="text-muted">
+                                    {% if shift_info.shift.required_rank_1 %}R1: {{ shift_info.shift.required_rank_1 }}{% endif %}
+                                    {% if shift_info.shift.required_rank_2 %}R2: {{ shift_info.shift.required_rank_2 }}{% endif %}
+                                    {% if shift_info.shift.required_rank_3 %}R3: {{ shift_info.shift.required_rank_3 }}{% endif %}
+                                    {% if shift_info.shift.required_rank_4 %}R4: {{ shift_info.shift.required_rank_4 }}{% endif %}
+                                </small>
+                                {% endif %}
+                            </p>
+                            
+                            <div>
+                                <strong>Assigned ({{ shift_info.assignments|length }}/{{ shift_info.shift.total_required_staff }}):</strong>
+                                {% if shift_info.assignments %}
+                                <div class="mt-1">
+                                    {% for assignment in shift_info.assignments %}
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="badge staff-badge rank-{{ assignment.employee.rank }}">
+                                            {{ assignment.employee.get_full_name|default:assignment.employee.username }}
+                                            (R{{ assignment.employee.rank }})
+                                        </span>
+                                        {% if user.is_staff %}
+                                        <a href="{% url 'assignment-delete' assignment.id %}" class="btn btn-sm btn-outline-danger ms-1">×</a>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted small mb-0">No staff assigned yet</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if user.is_staff %}
+                            <div class="mt-2">
+                                <a href="{% url 'assignment-create-for-shift' shift_info.shift.id %}" class="btn btn-sm btn-outline-primary w-100">
+                                    {% if shift_info.assignments %}Edit Assignments{% else %}Assign Staff{% endif %}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted text-center p-3">
+                        <p class="mb-0">No shifts scheduled</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

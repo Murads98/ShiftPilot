@@ -1,0 +1,177 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Shift Types - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Shift Types</h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#shiftTypeModal" data-action="create">
+        Add Shift Type
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="shiftTypeTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shift_type in shift_types %}
+                    <tr>
+                        <td>{{ shift_type.name }}</td>
+                        <td>{{ shift_type.start_time|time:"H:i" }}</td>
+                        <td>{{ shift_type.end_time|time:"H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary edit-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#shiftTypeModal" 
+                                        data-action="edit" 
+                                        data-id="{{ shift_type.id }}"
+                                        data-name="{{ shift_type.name }}">
+                                    Edit
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No shift types defined yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Shift Type -->
+<div class="modal fade" id="shiftTypeModal" tabindex="-1" aria-labelledby="shiftTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shiftTypeModalLabel">Add New Shift Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- Form will be loaded here via AJAX -->
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('shiftTypeModal'));
+    const modalContent = document.getElementById('modalContent');
+    const modalTitle = document.getElementById('shiftTypeModalLabel');
+    let currentAction = 'create';
+    let currentId = null;
+    
+    // Load form when modal is shown
+    document.getElementById('shiftTypeModal').addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        currentAction = button.getAttribute('data-action');
+        currentId = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        
+        // Set modal title
+        if (currentAction === 'edit') {
+            modalTitle.textContent = `Edit Shift Type: ${name}`;
+        } else {
+            modalTitle.textContent = 'Add New Shift Type';
+        }
+        
+        // Reset modal content
+        modalContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // Determine URL based on action
+        let url;
+        if (currentAction === 'edit') {
+            url = `/shift-types/${currentId}/update/`;
+        } else {
+            url = '{% url "shift-type-create" %}';
+        }
+        
+        // Load the form via AJAX
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            modalContent.innerHTML = data.html;
+            setupFormSubmission();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalContent.innerHTML = '<div class="alert alert-danger">Error loading form. Please try again.</div>';
+        });
+    });
+    
+    function setupFormSubmission() {
+        const form = modalContent.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                
+                // Determine URL based on current action
+                let url;
+                if (currentAction === 'edit') {
+                    url = `/shift-types/${currentId}/update/`;
+                } else {
+                    url = '{% url "shift-type-create" %}';
+                }
+                
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Success - close modal and reload page
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        // Form has errors - replace content with form including errors
+                        modalContent.innerHTML = data.html;
+                        setupFormSubmission(); // Re-setup form submission for the new form
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalContent.innerHTML = '<div class="alert alert-danger">Error submitting form. Please try again.</div>';
+                });
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

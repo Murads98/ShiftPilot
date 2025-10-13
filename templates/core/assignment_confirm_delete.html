@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Delete Assignment - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">Confirm Deletion</h5>
+            </div>
+            <div class="card-body">
+                <p>Are you sure you want to remove this assignment?</p>
+                
+                <div class="alert alert-info">
+                    <strong>Employee:</strong> {{ assignment.employee.get_full_name|default:assignment.employee.username }}<br>
+                    <strong>Shift:</strong> {{ assignment.shift.date|date:"D, M d, Y" }} - {{ assignment.shift.shift_type.name }}<br>
+                    <strong>Time:</strong> {{ assignment.shift.shift_type.start_time|time:"H:i" }} - {{ assignment.shift.shift_type.end_time|time:"H:i" }}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'schedule-view' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Delete Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

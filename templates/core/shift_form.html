@@ -1,0 +1,197 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}
+{% if form.instance.id %}Edit Shift{% else %}Add Shift{% endif %} - ShiftPilot
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    {% if form.instance.id %}Edit Shift: {{ form.instance.date|date:"M d, Y" }} {{ form.instance.shift_type.name }}{% else %}Add New Shift{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                        {{ form.date }}
+                        <style>
+                            #{{ form.date.id_for_label }} {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #212529;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                            }
+                        </style>
+                        {% if form.date.errors %}
+                        <div class="text-danger">
+                            {% for error in form.date.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.shift_type.id_for_label }}" class="form-label">Shift Type</label>
+                        {{ form.shift_type }}
+                        <style>
+                            #{{ form.shift_type.id_for_label }} {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #212529;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                            }
+                        </style>
+                        {% if form.shift_type.errors %}
+                        <div class="text-danger">
+                            {% for error in form.shift_type.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.total_required_staff.id_for_label }}" class="form-label">Total Required Staff</label>
+                        {{ form.total_required_staff }}
+                        <style>
+                            #{{ form.total_required_staff.id_for_label }} {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #212529;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                            }
+                        </style>
+                        {% if form.total_required_staff.errors %}
+                        <div class="text-danger">
+                            {% for error in form.total_required_staff.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.required_rank_1.id_for_label }}" class="form-label">Required Rank 1</label>
+                            {{ form.required_rank_1 }}
+                            <style>
+                                #{{ form.required_rank_1.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.required_rank_2.id_for_label }}" class="form-label">Required Rank 2</label>
+                            {{ form.required_rank_2 }}
+                            <style>
+                                #{{ form.required_rank_2.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.required_rank_3.id_for_label }}" class="form-label">Required Rank 3</label>
+                            {{ form.required_rank_3 }}
+                            <style>
+                                #{{ form.required_rank_3.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.required_rank_4.id_for_label }}" class="form-label">Required Rank 4</label>
+                            {{ form.required_rank_4 }}
+                            <style>
+                                #{{ form.required_rank_4.id_for_label }} {
+                                    display: block;
+                                    width: 100%;
+                                    padding: 0.375rem 0.75rem;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                    color: #212529;
+                                    background-color: #fff;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 0.25rem;
+                                }
+                            </style>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                        {{ form.notes }}
+                        <style>
+                            #{{ form.notes.id_for_label }} {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #212529;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                                min-height: 100px;
+                            }
+                        </style>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'shift-list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.id %}Save Changes{% else %}Add Shift{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

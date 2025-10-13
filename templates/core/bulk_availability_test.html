@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Test Availability Data - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Generate Test Availability Data</h1>
+    <p class="text-muted">This will create random availability preferences for all employees and shifts (for testing purposes only).</p>
+    
+    <div class="alert alert-warning">
+        <strong>Warning:</strong> This will delete all existing availability data and create new random test data.
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Generate Test Data</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
