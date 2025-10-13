@@ -5,39 +5,70 @@
 
 {% block extra_css %}
 <style>
+    #schedule-content {
+        background-color: white;
+        padding: 15px;
+        font-size: 0.85rem;
+    }
+    #schedule-content h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    #schedule-content .text-muted {
+        font-size: 0.9rem;
+    }
     .day-column {
-        min-width: 200px;
+        min-width: 160px;
+        max-width: 180px;
     }
     .shift-card {
-        margin-bottom: 8px;
-        border-radius: 4px;
+        margin-bottom: 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
     }
     .shift-card .card-header {
-        padding: 0.5rem 1rem;
+        padding: 0.35rem 0.6rem;
         font-weight: 600;
+        font-size: 0.8rem;
     }
     .shift-card .card-body {
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.6rem;
     }
     .employee-name {
-        padding: 0.4rem 0.6rem;
-        margin-bottom: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        margin-bottom: 0.25rem;
         background-color: #f8f9fa;
         border-left: 3px solid #0d6efd;
         border-radius: 3px;
-        font-size: 0.9rem;
+        font-size: 0.75rem;
     }
     .employee-name.current-user {
         background-color: #d1ecf1;
         border-left-color: #0dcaf0;
         font-weight: 600;
     }
+    .employee-name .badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.3rem;
+    }
     .download-btn {
         display: inline-block;
     }
-    #schedule-content {
-        background-color: white;
-        padding: 20px;
+    .card-header.bg-primary {
+        font-size: 0.85rem;
+    }
+    .card-header.bg-primary small {
+        font-size: 0.7rem;
+    }
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .legend-card {
+        font-size: 0.8rem;
+    }
+    .legend-card h6 {
+        font-size: 0.9rem;
     }
 </style>
 {% endblock %}
@@ -143,7 +174,7 @@
 </div>
 
     <!-- Legend -->
-    <div class="card mt-4">
+    <div class="card mt-4 legend-card">
         <div class="card-body">
             <h6>Legend:</h6>
             <ul class="mb-0">
