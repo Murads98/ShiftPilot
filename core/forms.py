@@ -3,7 +3,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import (
     Employee, ShiftType, Shift,
-    EmployeeAvailability, ShiftAssignment, ScheduleConfig, AvailabilityChoice
+    EmployeeAvailability, ShiftAssignment, ScheduleConfig, AvailabilityChoice,
+    ShiftTemplate, ShiftTemplateItem
 )
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -184,5 +185,92 @@ class ShiftAssignmentForm(forms.ModelForm):
                         f"This shift already has enough {rank_name} employees assigned "
                         f"({rank_counts[employee_rank]}/{required_for_rank})"
                     )
+
+        return cleaned_data
+
+
+class ShiftTemplateForm(forms.ModelForm):
+    """Form for creating/editing shift templates"""
+    class Meta:
+        model = ShiftTemplate
+        fields = ('name', 'description', 'is_active')
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class ShiftTemplateItemForm(forms.ModelForm):
+    """Form for creating/editing individual template items"""
+    class Meta:
+        model = ShiftTemplateItem
+        fields = ('weekday', 'shift_type', 'total_required_staff',
+                 'required_rank_1', 'required_rank_2', 'required_rank_3', 'required_rank_4',
+                 'notes')
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        total = cleaned_data.get('total_required_staff')
+        r1 = cleaned_data.get('required_rank_1') or 0
+        r2 = cleaned_data.get('required_rank_2') or 0
+        r3 = cleaned_data.get('required_rank_3') or 0
+        r4 = cleaned_data.get('required_rank_4') or 0
+
+        sum_by_rank = r1 + r2 + r3 + r4
+
+        if sum_by_rank != total:
+            raise ValidationError(
+                f"Sum of required staff by rank ({sum_by_rank}) must equal total required staff ({total})"
+            )
+
+        return cleaned_data
+
+
+class ApplyTemplateForm(forms.Form):
+    """Form for applying a template to generate shifts"""
+    template = forms.ModelChoiceField(
+        queryset=ShiftTemplate.objects.filter(is_active=True),
+        label="Select Template",
+        help_text="Choose a weekly template to generate shifts"
+    )
+    start_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Start Date",
+        help_text="First day of the period (should be a Monday for best results)"
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="End Date",
+        help_text="Last day of the period"
+    )
+    overwrite_existing = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Overwrite existing shifts",
+        help_text="If checked, existing shifts in this date range will be deleted before generating new ones"
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date:
+            if start_date > end_date:
+                raise ValidationError("End date must be after start date")
+
+            # Check the date range isn't too long
+            date_difference = (end_date - start_date).days
+            if date_difference > 84:  # ~12 weeks
+                raise ValidationError("Date range cannot exceed 12 weeks")
+
+            # Warn if start date is not a Monday
+            if start_date.weekday() != 0:
+                self.add_error('start_date', ValidationError(
+                    "Warning: Start date is not a Monday. Template will apply based on the actual weekday.",
+                    code='warning'
+                ))
 
         return cleaned_data

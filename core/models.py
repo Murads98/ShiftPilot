@@ -151,3 +151,74 @@ class ScheduleConfig(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.start_date} to {self.end_date})"
+
+
+class ShiftTemplate(models.Model):
+    """
+    Defines a reusable weekly shift pattern template
+    """
+    name = models.CharField(max_length=100, help_text="Template name (e.g., 'Summer Schedule', 'Holiday Coverage')")
+    description = models.TextField(blank=True, help_text="Optional description of this template")
+    created_by = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='shift_templates_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, help_text="Inactive templates are hidden from selection")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ShiftTemplateItem(models.Model):
+    """
+    Individual shift entry within a template (defines one shift type on one day of the week)
+    """
+    WEEKDAY_CHOICES = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
+    ]
+
+    template = models.ForeignKey(ShiftTemplate, on_delete=models.CASCADE, related_name='items')
+    weekday = models.IntegerField(choices=WEEKDAY_CHOICES, help_text="Day of the week (0=Monday, 6=Sunday)")
+    shift_type = models.ForeignKey(ShiftType, on_delete=models.CASCADE)
+
+    # Staff requirements
+    total_required_staff = models.IntegerField(default=1)
+    required_rank_1 = models.IntegerField(default=0)
+    required_rank_2 = models.IntegerField(default=0)
+    required_rank_3 = models.IntegerField(default=0)
+    required_rank_4 = models.IntegerField(default=0)
+
+    notes = models.TextField(blank=True)
+
+    def clean(self):
+        """
+        Validate that rank requirements add up to total required staff
+        """
+        super().clean()
+
+        total_rank_requirements = (
+            (self.required_rank_1 or 0) +
+            (self.required_rank_2 or 0) +
+            (self.required_rank_3 or 0) +
+            (self.required_rank_4 or 0)
+        )
+
+        if total_rank_requirements != self.total_required_staff:
+            raise ValidationError({
+                'total_required_staff': f'Total required staff ({self.total_required_staff}) must equal the sum of rank requirements ({total_rank_requirements}).'
+            })
+
+    def __str__(self):
+        return f"{self.template.name} - {self.get_weekday_display()} {self.shift_type.name}"
+
+    class Meta:
+        ordering = ['weekday', 'shift_type__start_time']
+        unique_together = ('template', 'weekday', 'shift_type')

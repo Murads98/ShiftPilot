@@ -2,8 +2,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    Employee, ShiftType, Shift, 
-    EmployeeAvailability, ShiftAssignment, ScheduleConfig
+    Employee, ShiftType, Shift,
+    EmployeeAvailability, ShiftAssignment, ScheduleConfig,
+    ShiftTemplate, ShiftTemplateItem
 )
 
 class EmployeeAdmin(UserAdmin):
@@ -44,6 +45,19 @@ class ScheduleConfigAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+class ShiftTemplateItemInline(admin.TabularInline):
+    model = ShiftTemplateItem
+    extra = 1
+    fields = ('weekday', 'shift_type', 'total_required_staff', 'required_rank_1', 'required_rank_2', 'required_rank_3', 'required_rank_4', 'notes')
+
+
+class ShiftTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active', 'created_by', 'created_at', 'updated_at')
+    list_filter = ('is_active', 'created_by')
+    search_fields = ('name', 'description')
+    inlines = [ShiftTemplateItemInline]
+
+
 # Register models
 admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(ShiftType, ShiftTypeAdmin)
@@ -51,3 +65,4 @@ admin.site.register(Shift, ShiftAdmin)
 admin.site.register(EmployeeAvailability, EmployeeAvailabilityAdmin)
 admin.site.register(ShiftAssignment, ShiftAssignmentAdmin)
 admin.site.register(ScheduleConfig, ScheduleConfigAdmin)
+admin.site.register(ShiftTemplate, ShiftTemplateAdmin)
