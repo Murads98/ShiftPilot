@@ -124,9 +124,51 @@ class EmployeeCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = EmployeeCreationForm
     template_name = 'core/employee_form.html'
     success_url = reverse_lazy('employee-list')
-    
+
     def test_func(self):
         return is_manager(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request - return just the form HTML
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': 'Add New Employee',
+                'submit_text': 'Create Employee'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        # Normal request - return full page
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request
+            if form.is_valid():
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                # Form has errors - return form with errors
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': 'Add New Employee',
+                    'submit_text': 'Create Employee'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request - use default behavior
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class EmployeeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -141,6 +183,48 @@ class EmployeeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('employee-detail', kwargs={'pk': self.object.pk})
+
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request - return just the form HTML
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': f'Edit Employee: {self.object.get_full_name() or self.object.username}',
+                'submit_text': 'Update Employee'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        # Normal request - return full page
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request
+            if form.is_valid():
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                # Form has errors - return form with errors
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': f'Edit Employee: {self.object.get_full_name() or self.object.username}',
+                    'submit_text': 'Update Employee'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request - use default behavior
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class EmployeeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):

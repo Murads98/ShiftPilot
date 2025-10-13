@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Employees</h1>
-    <a href="{% url 'employee-create' %}" class="btn btn-primary">Add Employee</a>
+    <a href="{% url 'employee-create' %}" class="btn btn-primary" data-ajax-modal>Add Employee</a>
 </div>
 
 <div class="card">
@@ -41,7 +41,7 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'employee-detail' employee.id %}" class="btn btn-outline-primary">View</a>
-                                <a href="{% url 'employee-update' employee.id %}" class="btn btn-outline-secondary">Edit</a>
+                                <a href="{% url 'employee-update' employee.id %}" class="btn btn-outline-secondary" data-ajax-modal>Edit</a>
                                 {% if employee != user %}
                                 <a href="{% url 'employee-delete' employee.id %}" class="btn btn-outline-danger">Delete</a>
                                 {% endif %}

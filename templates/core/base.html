@@ -95,10 +95,19 @@
             </div>
             {% endfor %}
         {% endif %}
-        
+
         {% block content %}{% endblock %}
     </div>
-    
+
+    <!-- Generic AJAX Modal -->
+    <div class="modal fade" id="ajaxModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" id="ajaxModalContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer mt-auto py-3 bg-light">
         <div class="container text-center">
@@ -108,7 +117,85 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <!-- AJAX Modal Handler -->
+    <script>
+        // Generic AJAX Modal Handler
+        function openAjaxModal(url, callback) {
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    document.getElementById('ajaxModalContent').innerHTML = data.html;
+                    const modal = new bootstrap.Modal(document.getElementById('ajaxModal'));
+                    modal.show();
+
+                    // Handle form submission
+                    const form = document.getElementById('modalForm');
+                    if (form) {
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            submitAjaxForm(url, new FormData(form), modal, callback);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading modal:', error);
+                alert('Error loading form. Please try again.');
+            });
+        }
+
+        function submitAjaxForm(url, formData, modal, callback) {
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modal.hide();
+                    if (callback) {
+                        callback();
+                    } else {
+                        location.reload();
+                    }
+                } else if (data.html) {
+                    // Form has errors, reload form with errors
+                    document.getElementById('ajaxModalContent').innerHTML = data.html;
+                    const form = document.getElementById('modalForm');
+                    if (form) {
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            submitAjaxForm(url, new FormData(form), modal, callback);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting form:', error);
+                alert('Error saving. Please try again.');
+            });
+        }
+
+        // Add event listeners for AJAX modal triggers
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-ajax-modal]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openAjaxModal(this.href);
+                });
+            });
+        });
+    </script>
+
     <!-- Custom JS -->
     {% block extra_js %}{% endblock %}
 </body>
