@@ -28,7 +28,7 @@
                         <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'schedule-view' %}">Schedule</a>
+                        <a class="nav-link" href="{% url 'schedule-published' %}">Schedule</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'availability-calendar' %}">My Availability</a>
@@ -40,6 +40,8 @@
                             Management
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'schedule-view' %}">Manager Schedule View</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'employee-list' %}">Employees</a></li>
                             <li><a class="dropdown-item" href="{% url 'shift-type-list' %}">Shift Types</a></li>
                             <li><a class="dropdown-item" href="{% url 'shift-list' %}">Shifts</a></li>

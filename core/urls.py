@@ -32,6 +32,7 @@ urlpatterns = [
     # Schedule URLs
     path('schedule/', views.schedule_view, name='schedule-view'),
     path('schedule/<int:config_id>/', views.schedule_view, name='schedule-view'),
+    path('schedule/published/', views.schedule_published, name='schedule-published'),
     path('schedule/configs/', views.ScheduleConfigListView.as_view(), name='schedule-config-list'),
     path('schedule/configs/new/', views.ScheduleConfigCreateView.as_view(), name='schedule-config-create'),
     path('schedule/generate/<int:config_id>/', views.generate_schedule, name='generate-schedule'),

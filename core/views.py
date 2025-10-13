@@ -623,6 +623,61 @@ def schedule_view(request, config_id=None):
 
 
 @login_required
+def schedule_published(request):
+    """Clean, employee-facing view of published schedules"""
+    # Get date range from GET parameters
+    start_date_param = request.GET.get('start_date')
+    end_date_param = request.GET.get('end_date')
+
+    if start_date_param and end_date_param:
+        start_date = datetime.strptime(start_date_param, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_param, '%Y-%m-%d').date()
+    else:
+        # Default to current week
+        today = timezone.now().date()
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+
+    # Get all shifts in this date range
+    shifts = Shift.objects.filter(
+        date__gte=start_date,
+        date__lte=end_date
+    ).order_by('date', 'shift_type__start_time')
+
+    # Get all assignments for these shifts
+    assignments = ShiftAssignment.objects.filter(
+        shift__in=shifts
+    ).select_related('employee', 'shift')
+
+    # Create a dictionary of shift_id -> list of assignments
+    assignments_by_shift = {}
+    for assignment in assignments:
+        if assignment.shift_id not in assignments_by_shift:
+            assignments_by_shift[assignment.shift_id] = []
+        assignments_by_shift[assignment.shift_id].append(assignment)
+
+    # Group shifts by date for calendar display
+    shifts_by_date = {}
+    date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+
+    for date in date_range:
+        shifts_by_date[date] = []
+
+    for shift in shifts:
+        shift_info = {
+            'shift': shift,
+            'assignments': assignments_by_shift.get(shift.id, [])
+        }
+        shifts_by_date[shift.date].append(shift_info)
+
+    return render(request, 'core/schedule_published.html', {
+        'shifts_by_date': shifts_by_date,
+        'start_date': start_date,
+        'end_date': end_date,
+    })
+
+
+@login_required
 def generate_schedule(request, config_id):
     """Generate schedule using Claude AI"""
     if not is_manager(request.user):
