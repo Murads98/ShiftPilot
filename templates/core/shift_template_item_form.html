@@ -21,7 +21,12 @@
 
                     <div class="mb-3">
                         <label for="{{ form.weekday.id_for_label }}" class="form-label">Day of Week *</label>
-                        {{ form.weekday }}
+                        <select name="{{ form.weekday.name }}" id="{{ form.weekday.id_for_label }}" class="form-select" required>
+                            <option value="">Select a day...</option>
+                            {% for value, label in form.weekday.field.choices %}
+                            <option value="{{ value }}" {% if form.weekday.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                         {% if form.weekday.errors %}
                         <div class="text-danger">{{ form.weekday.errors }}</div>
                         {% endif %}
@@ -29,7 +34,14 @@
 
                     <div class="mb-3">
                         <label for="{{ form.shift_type.id_for_label }}" class="form-label">Shift Type *</label>
-                        {{ form.shift_type }}
+                        <select name="{{ form.shift_type.name }}" id="{{ form.shift_type.id_for_label }}" class="form-select" required>
+                            <option value="">Select a shift type...</option>
+                            {% for value, label in form.shift_type.field.choices %}
+                            {% if value %}
+                            <option value="{{ value }}" {% if form.shift_type.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
                         {% if form.shift_type.errors %}
                         <div class="text-danger">{{ form.shift_type.errors }}</div>
                         {% endif %}
@@ -37,7 +49,7 @@
 
                     <div class="mb-3">
                         <label for="{{ form.total_required_staff.id_for_label }}" class="form-label">Total Required Staff *</label>
-                        {{ form.total_required_staff }}
+                        <input type="number" name="{{ form.total_required_staff.name }}" id="{{ form.total_required_staff.id_for_label }}" class="form-control" value="{{ form.total_required_staff.value|default:'1' }}" min="1" required>
                         {% if form.total_required_staff.errors %}
                         <div class="text-danger">{{ form.total_required_staff.errors }}</div>
                         {% endif %}
@@ -46,28 +58,28 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label for="{{ form.required_rank_1.id_for_label }}" class="form-label">Rank 1 (Junior)</label>
-                            {{ form.required_rank_1 }}
+                            <input type="number" name="{{ form.required_rank_1.name }}" id="{{ form.required_rank_1.id_for_label }}" class="form-control" value="{{ form.required_rank_1.value|default:'0' }}" min="0">
                             {% if form.required_rank_1.errors %}
                             <div class="text-danger">{{ form.required_rank_1.errors }}</div>
                             {% endif %}
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="{{ form.required_rank_2.id_for_label }}" class="form-label">Rank 2 (Regular)</label>
-                            {{ form.required_rank_2 }}
+                            <input type="number" name="{{ form.required_rank_2.name }}" id="{{ form.required_rank_2.id_for_label }}" class="form-control" value="{{ form.required_rank_2.value|default:'0' }}" min="0">
                             {% if form.required_rank_2.errors %}
                             <div class="text-danger">{{ form.required_rank_2.errors }}</div>
                             {% endif %}
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="{{ form.required_rank_3.id_for_label }}" class="form-label">Rank 3 (Senior)</label>
-                            {{ form.required_rank_3 }}
+                            <input type="number" name="{{ form.required_rank_3.name }}" id="{{ form.required_rank_3.id_for_label }}" class="form-control" value="{{ form.required_rank_3.value|default:'0' }}" min="0">
                             {% if form.required_rank_3.errors %}
                             <div class="text-danger">{{ form.required_rank_3.errors }}</div>
                             {% endif %}
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="{{ form.required_rank_4.id_for_label }}" class="form-label">Rank 4 (Lead)</label>
-                            {{ form.required_rank_4 }}
+                            <input type="number" name="{{ form.required_rank_4.name }}" id="{{ form.required_rank_4.id_for_label }}" class="form-control" value="{{ form.required_rank_4.value|default:'0' }}" min="0">
                             {% if form.required_rank_4.errors %}
                             <div class="text-danger">{{ form.required_rank_4.errors }}</div>
                             {% endif %}
@@ -80,7 +92,7 @@
 
                     <div class="mb-3">
                         <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
-                        {{ form.notes }}
+                        <textarea name="{{ form.notes.name }}" id="{{ form.notes.id_for_label }}" class="form-control" rows="2">{{ form.notes.value|default:'' }}</textarea>
                         {% if form.notes.errors %}
                         <div class="text-danger">{{ form.notes.errors }}</div>
                         {% endif %}
