@@ -48,7 +48,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h5 class="card-title">Total Emails</h5>
-                    <h2 class="text-primary">{{ page_obj.paginator.count }}</h2>
+                    <h2 class="text-primary">{{ total_count }}</h2>
                 </div>
             </div>
         </div>
@@ -56,7 +56,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h5 class="card-title">Successful</h5>
-                    <h2 class="text-success">{{ page_obj.object_list|selectattr:"success"|list|length }}</h2>
+                    <h2 class="text-success">{{ success_count }}</h2>
                 </div>
             </div>
         </div>
@@ -64,7 +64,7 @@
             <div class="card text-center border-danger">
                 <div class="card-body">
                     <h5 class="card-title">Failed</h5>
-                    <h2 class="text-danger">{{ page_obj.object_list|rejectattr:"success"|list|length }}</h2>
+                    <h2 class="text-danger">{{ fail_count }}</h2>
                 </div>
             </div>
         </div>

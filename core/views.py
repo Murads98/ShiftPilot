@@ -1204,6 +1204,7 @@ def email_log_list(request):
     success_filter = request.GET.get('success')
 
     # Start with all logs
+    from .models import EmailLog
     logs = EmailLog.objects.all().select_related('sent_by')
 
     # Apply filters
@@ -1215,6 +1216,11 @@ def email_log_list(request):
     elif success_filter == 'false':
         logs = logs.filter(success=False)
 
+    # Calculate statistics before pagination
+    total_count = logs.count()
+    success_count = logs.filter(success=True).count()
+    fail_count = logs.filter(success=False).count()
+
     # Paginate results
     from django.core.paginator import Paginator
     paginator = Paginator(logs, 50)  # Show 50 logs per page
@@ -1222,7 +1228,6 @@ def email_log_list(request):
     page_obj = paginator.get_page(page_number)
 
     # Get available email types for filter dropdown
-    from .models import EmailLog
     email_types = EmailLog.EMAIL_TYPE_CHOICES
 
     return render(request, 'core/email_log_list.html', {
@@ -1230,4 +1235,7 @@ def email_log_list(request):
         'email_types': email_types,
         'current_type': email_type,
         'current_success': success_filter,
+        'total_count': total_count,
+        'success_count': success_count,
+        'fail_count': fail_count,
     })
