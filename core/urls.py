@@ -11,16 +11,19 @@ urlpatterns = [
     path('employees/<int:pk>/', views.EmployeeDetailView.as_view(), name='employee-detail'),
     path('employees/new/', views.EmployeeCreateView.as_view(), name='employee-create'),
     path('employees/<int:pk>/update/', views.EmployeeUpdateView.as_view(), name='employee-update'),
+    path('employees/<int:pk>/delete/', views.EmployeeDeleteView.as_view(), name='employee-delete'),
     
     # Shift Type URLs
     path('shift-types/', views.ShiftTypeListView.as_view(), name='shift-type-list'),
     path('shift-types/new/', views.ShiftTypeCreateView.as_view(), name='shift-type-create'),
     path('shift-types/<int:pk>/update/', views.ShiftTypeUpdateView.as_view(), name='shift-type-update'),
+    path('shift-types/<int:pk>/delete/', views.ShiftTypeDeleteView.as_view(), name='shift-type-delete'),
     
     # Shift URLs
     path('shifts/', views.ShiftListView.as_view(), name='shift-list'),
     path('shifts/new/', views.ShiftCreateView.as_view(), name='shift-create'),
     path('shifts/<int:pk>/update/', views.ShiftUpdateView.as_view(), name='shift-update'),
+    path('shifts/<int:pk>/delete/', views.ShiftDeleteView.as_view(), name='shift-delete'),
     
     # Availability URLs
     path('availability/', views.availability_calendar, name='availability-calendar'),

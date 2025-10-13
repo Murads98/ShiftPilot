@@ -132,13 +132,54 @@ class EmployeeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Employee
     fields = ['first_name', 'last_name', 'email', 'rank', 'work_start_date']
     template_name = 'core/employee_form.html'
-    
+
     def test_func(self):
         # Allow managers to update any employee, employees can only update themselves
         return is_manager(self.request.user) or self.get_object() == self.request.user
-    
+
     def get_success_url(self):
         return reverse('employee-detail', kwargs={'pk': self.object.pk})
+
+
+class EmployeeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete an employee (managers only)"""
+    model = Employee
+    template_name = 'core/employee_confirm_delete.html'
+    success_url = reverse_lazy('employee-list')
+
+    def test_func(self):
+        # Only managers can delete employees
+        return is_manager(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        employee = self.get_object()
+
+        # Get counts of related data that will be affected
+        future_assignments = ShiftAssignment.objects.filter(
+            employee=employee,
+            shift__date__gte=timezone.now().date()
+        ).count()
+
+        past_assignments = ShiftAssignment.objects.filter(
+            employee=employee,
+            shift__date__lt=timezone.now().date()
+        ).count()
+
+        context['future_assignments'] = future_assignments
+        context['past_assignments'] = past_assignments
+        return context
+
+    def post(self, request, *args, **kwargs):
+        employee = self.get_object()
+
+        # Prevent deletion of currently logged-in user
+        if employee == request.user:
+            messages.error(request, 'You cannot delete your own account.')
+            return redirect('employee-detail', pk=employee.pk)
+
+        messages.success(request, f'Employee {employee.first_name} {employee.last_name} has been deleted.')
+        return super().post(request, *args, **kwargs)
 
 
 # Shift Type Views
@@ -255,6 +296,47 @@ class ShiftTypeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return self.form_invalid(form)
 
 
+class ShiftTypeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a shift type (managers only)"""
+    model = ShiftType
+    template_name = 'core/shift_type_confirm_delete.html'
+    success_url = reverse_lazy('shift-type-list')
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        shift_type = self.get_object()
+
+        # Count shifts using this shift type
+        shifts_count = Shift.objects.filter(shift_type=shift_type).count()
+        future_shifts = Shift.objects.filter(
+            shift_type=shift_type,
+            date__gte=timezone.now().date()
+        ).count()
+
+        context['shifts_count'] = shifts_count
+        context['future_shifts'] = future_shifts
+        return context
+
+    def post(self, request, *args, **kwargs):
+        shift_type = self.get_object()
+        shifts_count = Shift.objects.filter(shift_type=shift_type).count()
+
+        if shifts_count > 0:
+            messages.error(
+                request,
+                f'Cannot delete shift type "{shift_type.name}". '
+                f'It is being used by {shifts_count} shift(s). '
+                f'Please delete or reassign those shifts first.'
+            )
+            return redirect('shift-type-list')
+
+        messages.success(request, f'Shift type "{shift_type.name}" has been deleted.')
+        return super().post(request, *args, **kwargs)
+
+
 # Shift Views
 class ShiftListView(LoginRequiredMixin, ListView):
     """View all shifts"""
@@ -306,9 +388,38 @@ class ShiftUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     form_class = ShiftForm
     template_name = 'core/shift_form.html'
     success_url = reverse_lazy('shift-list')
-    
+
     def test_func(self):
         return is_manager(self.request.user)
+
+
+class ShiftDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a shift (managers only)"""
+    model = Shift
+    template_name = 'core/shift_confirm_delete.html'
+    success_url = reverse_lazy('shift-list')
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        shift = self.get_object()
+
+        # Get assignments for this shift
+        assignments = ShiftAssignment.objects.filter(shift=shift).select_related('employee')
+
+        context['assignments'] = assignments
+        context['assignments_count'] = assignments.count()
+        context['is_future'] = shift.date >= timezone.now().date()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        shift = self.get_object()
+        shift_info = f"{shift.date.strftime('%B %d, %Y')} - {shift.shift_type.name}"
+
+        messages.success(request, f'Shift "{shift_info}" has been deleted.')
+        return super().post(request, *args, **kwargs)
 
 
 # Availability Views

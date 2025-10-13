@@ -62,6 +62,7 @@
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'shift-update' shift.id %}" class="btn btn-outline-secondary">Edit</a>
                                 <a href="{% url 'assignment-create-for-shift' shift.id %}" class="btn btn-outline-primary">Assign Staff</a>
+                                <a href="{% url 'shift-delete' shift.id %}" class="btn btn-outline-danger">Delete</a>
                             </div>
                         </td>
                     </tr>

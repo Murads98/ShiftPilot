@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Delete Employee - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Delete Employee</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+
+                <h5>Are you sure you want to delete this employee?</h5>
+                <p class="lead">
+                    <strong>{{ object.first_name }} {{ object.last_name }}</strong> ({{ object.username }})
+                </p>
+
+                <div class="mt-4">
+                    <h6>Employee Details:</h6>
+                    <ul>
+                        <li><strong>Rank:</strong> {{ object.get_rank_display }}</li>
+                        <li><strong>Email:</strong> {{ object.email }}</li>
+                        {% if object.work_start_date %}
+                        <li><strong>Work Start Date:</strong> {{ object.work_start_date|date:"M d, Y" }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="alert alert-info mt-4">
+                    <h6>Impact of Deletion:</h6>
+                    <ul class="mb-0">
+                        {% if future_assignments > 0 %}
+                        <li class="text-danger">
+                            <strong>{{ future_assignments }}</strong> future shift assignment(s) will be removed
+                        </li>
+                        {% endif %}
+                        {% if past_assignments > 0 %}
+                        <li>
+                            <strong>{{ past_assignments }}</strong> past shift assignment(s) will be removed
+                        </li>
+                        {% endif %}
+                        <li>All availability submissions will be deleted</li>
+                        <li>All schedule configurations created by this employee will remain but show as "deleted user"</li>
+                    </ul>
+                </div>
+
+                {% if future_assignments > 0 %}
+                <div class="alert alert-danger mt-3">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <strong>Caution:</strong> This employee has {{ future_assignments }} upcoming shift(s).
+                    These shifts will become understaffed after deletion!
+                </div>
+                {% endif %}
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete Employee
+                        </button>
+                        <a href="{% url 'employee-detail' object.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

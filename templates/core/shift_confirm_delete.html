@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Delete Shift - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Delete Shift</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+
+                <h5>Are you sure you want to delete this shift?</h5>
+
+                <div class="mt-4">
+                    <h6>Shift Details:</h6>
+                    <ul>
+                        <li><strong>Date:</strong> {{ object.date|date:"l, F j, Y" }}</li>
+                        <li><strong>Shift Type:</strong> {{ object.shift_type.name }}</li>
+                        <li><strong>Time:</strong> {{ object.shift_type.start_time|time:"H:i" }} - {{ object.shift_type.end_time|time:"H:i" }}</li>
+                        <li><strong>Required Staff:</strong> {{ object.total_required_staff }}</li>
+                        {% if object.required_rank_1 or object.required_rank_2 or object.required_rank_3 or object.required_rank_4 %}
+                        <li><strong>Rank Requirements:</strong>
+                            <ul>
+                                {% if object.required_rank_1 %}<li>{{ object.required_rank_1 }} Junior</li>{% endif %}
+                                {% if object.required_rank_2 %}<li>{{ object.required_rank_2 }} Regular</li>{% endif %}
+                                {% if object.required_rank_3 %}<li>{{ object.required_rank_3 }} Senior</li>{% endif %}
+                                {% if object.required_rank_4 %}<li>{{ object.required_rank_4 }} Team Leader</li>{% endif %}
+                            </ul>
+                        </li>
+                        {% endif %}
+                        {% if object.notes %}
+                        <li><strong>Notes:</strong> {{ object.notes }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="alert alert-info mt-4">
+                    <h6>Impact of Deletion:</h6>
+                    <ul class="mb-0">
+                        {% if assignments_count > 0 %}
+                        <li class="text-danger">
+                            <strong>{{ assignments_count }}</strong> employee assignment(s) will be removed:
+                            <ul class="mt-2">
+                                {% for assignment in assignments %}
+                                <li>{{ assignment.employee.first_name }} {{ assignment.employee.last_name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li>No employees are currently assigned to this shift</li>
+                        {% endif %}
+                        <li>All availability submissions for this shift will be deleted</li>
+                    </ul>
+                </div>
+
+                {% if is_future and assignments_count > 0 %}
+                <div class="alert alert-danger mt-3">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <strong>Caution:</strong> This is an upcoming shift with {{ assignments_count }} assigned employee(s).
+                    They will need to be notified that their shift has been cancelled.
+                </div>
+                {% endif %}
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete Shift
+                        </button>
+                        <a href="{% url 'shift-list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -31,14 +31,17 @@
                         <td>{{ shift_type.end_time|time:"H:i" }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-outline-secondary edit-btn" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#shiftTypeModal" 
-                                        data-action="edit" 
+                                <button type="button" class="btn btn-outline-secondary edit-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#shiftTypeModal"
+                                        data-action="edit"
                                         data-id="{{ shift_type.id }}"
                                         data-name="{{ shift_type.name }}">
                                     Edit
                                 </button>
+                                <a href="{% url 'shift-type-delete' shift_type.id %}" class="btn btn-outline-danger">
+                                    Delete
+                                </a>
                             </div>
                         </td>
                     </tr>
