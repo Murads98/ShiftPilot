@@ -14,11 +14,13 @@ from .claude_scheduler import ClaudeScheduler
 
 from .models import (
     Employee, ShiftType, Shift,
-    EmployeeAvailability, ShiftAssignment, ScheduleConfig, AvailabilityChoice
+    EmployeeAvailability, ShiftAssignment, ScheduleConfig, AvailabilityChoice,
+    ShiftTemplate, ShiftTemplateItem
 )
 from .forms import (
-    EmployeeCreationForm, ShiftTypeForm, ShiftForm, 
-    AvailabilityForm, BulkAvailabilityForm, ScheduleConfigForm, ShiftAssignmentForm
+    EmployeeCreationForm, ShiftTypeForm, ShiftForm,
+    AvailabilityForm, BulkAvailabilityForm, ScheduleConfigForm, ShiftAssignmentForm,
+    ShiftTemplateForm, ShiftTemplateItemForm, ApplyTemplateForm
 )
 
 
@@ -830,5 +832,242 @@ def bulk_availability_test(request):
         
         messages.success(request, f'Created test availability data for {len(shifts)} shifts and {len(employees)} employees.')
         return redirect('dashboard')
-    
+
     return render(request, 'core/bulk_availability_test.html')
+
+
+# Shift Template Views
+class ShiftTemplateListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """View all shift templates (managers only)"""
+    model = ShiftTemplate
+    context_object_name = 'templates'
+    template_name = 'core/shift_template_list.html'
+    ordering = ['-created_at']
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Show all templates including inactive ones
+        return queryset.prefetch_related('items__shift_type')
+
+
+class ShiftTemplateDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """View template details (managers only)"""
+    model = ShiftTemplate
+    context_object_name = 'template'
+    template_name = 'core/shift_template_detail.html'
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        template = self.get_object()
+
+        # Get all items grouped by weekday
+        items_by_weekday = {}
+        for i in range(7):  # 0-6 for Monday-Sunday
+            items_by_weekday[i] = template.items.filter(weekday=i).select_related('shift_type')
+
+        context['items_by_weekday'] = items_by_weekday
+        context['weekday_names'] = dict(ShiftTemplateItem.WEEKDAY_CHOICES)
+        return context
+
+
+class ShiftTemplateCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    """Create a new shift template (managers only)"""
+    model = ShiftTemplate
+    form_class = ShiftTemplateForm
+    template_name = 'core/shift_template_form.html'
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        messages.success(self.request, f'Template "{form.instance.name}" created successfully!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('shift-template-detail', kwargs={'pk': self.object.pk})
+
+
+class ShiftTemplateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update a shift template (managers only)"""
+    model = ShiftTemplate
+    form_class = ShiftTemplateForm
+    template_name = 'core/shift_template_form.html'
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Template "{form.instance.name}" updated successfully!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('shift-template-detail', kwargs={'pk': self.object.pk})
+
+
+class ShiftTemplateDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a shift template (managers only)"""
+    model = ShiftTemplate
+    template_name = 'core/shift_template_confirm_delete.html'
+    success_url = reverse_lazy('shift-template-list')
+
+    def test_func(self):
+        return is_manager(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        template = self.get_object()
+        template_name = template.name
+        messages.success(request, f'Template "{template_name}" has been deleted.')
+        return super().post(request, *args, **kwargs)
+
+
+# Template Item Management
+@login_required
+def template_item_create(request, template_id):
+    """Add a new item to a template (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can edit templates.')
+        return redirect('dashboard')
+
+    template = get_object_or_404(ShiftTemplate, id=template_id)
+
+    if request.method == 'POST':
+        form = ShiftTemplateItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.template = template
+            item.save()
+            messages.success(request, 'Shift added to template!')
+            return redirect('shift-template-detail', pk=template.id)
+    else:
+        form = ShiftTemplateItemForm()
+
+    return render(request, 'core/shift_template_item_form.html', {
+        'form': form,
+        'template': template,
+        'action': 'Add'
+    })
+
+
+@login_required
+def template_item_update(request, pk):
+    """Edit an existing template item (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can edit templates.')
+        return redirect('dashboard')
+
+    item = get_object_or_404(ShiftTemplateItem, id=pk)
+    template = item.template
+
+    if request.method == 'POST':
+        form = ShiftTemplateItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Template item updated!')
+            return redirect('shift-template-detail', pk=template.id)
+    else:
+        form = ShiftTemplateItemForm(instance=item)
+
+    return render(request, 'core/shift_template_item_form.html', {
+        'form': form,
+        'template': template,
+        'item': item,
+        'action': 'Edit'
+    })
+
+
+@login_required
+def template_item_delete(request, pk):
+    """Delete a template item (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can edit templates.')
+        return redirect('dashboard')
+
+    item = get_object_or_404(ShiftTemplateItem, id=pk)
+    template = item.template
+
+    if request.method == 'POST':
+        item.delete()
+        messages.success(request, 'Item removed from template!')
+        return redirect('shift-template-detail', pk=template.id)
+
+    return render(request, 'core/shift_template_item_confirm_delete.html', {
+        'item': item,
+        'template': template
+    })
+
+
+# Apply Template (Generate Shifts)
+@login_required
+def apply_template(request):
+    """Apply a template to generate shifts for a date range (managers only)"""
+    if not is_manager(request.user):
+        messages.error(request, 'Only managers can generate shifts from templates.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = ApplyTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.cleaned_data['template']
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            overwrite_existing = form.cleaned_data['overwrite_existing']
+
+            # Delete existing shifts if requested
+            if overwrite_existing:
+                deleted_count = Shift.objects.filter(
+                    date__gte=start_date,
+                    date__lte=end_date
+                ).delete()[0]
+                if deleted_count > 0:
+                    messages.info(request, f'Deleted {deleted_count} existing shift(s).')
+
+            # Generate shifts from template
+            created_count = 0
+            current_date = start_date
+
+            while current_date <= end_date:
+                weekday = current_date.weekday()
+
+                # Get all template items for this weekday
+                template_items = ShiftTemplateItem.objects.filter(
+                    template=template,
+                    weekday=weekday
+                )
+
+                for item in template_items:
+                    # Create shift if it doesn't exist
+                    shift, created = Shift.objects.get_or_create(
+                        date=current_date,
+                        shift_type=item.shift_type,
+                        defaults={
+                            'total_required_staff': item.total_required_staff,
+                            'required_rank_1': item.required_rank_1,
+                            'required_rank_2': item.required_rank_2,
+                            'required_rank_3': item.required_rank_3,
+                            'required_rank_4': item.required_rank_4,
+                            'notes': item.notes
+                        }
+                    )
+                    if created:
+                        created_count += 1
+
+                current_date += timedelta(days=1)
+
+            messages.success(
+                request,
+                f'Successfully created {created_count} shift(s) from template "{template.name}"!'
+            )
+            return redirect('shift-list')
+    else:
+        form = ApplyTemplateForm()
+
+    return render(request, 'core/apply_template.html', {
+        'form': form
+    })

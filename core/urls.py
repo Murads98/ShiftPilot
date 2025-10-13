@@ -44,4 +44,15 @@ urlpatterns = [
     path('assignments/<int:pk>/delete/', views.assignment_delete, name='assignment-delete'),
 
     path('test/availability/', views.bulk_availability_test, name='bulk-availability-test'),
+
+    # Shift Template URLs
+    path('templates/', views.ShiftTemplateListView.as_view(), name='shift-template-list'),
+    path('templates/new/', views.ShiftTemplateCreateView.as_view(), name='shift-template-create'),
+    path('templates/<int:pk>/', views.ShiftTemplateDetailView.as_view(), name='shift-template-detail'),
+    path('templates/<int:pk>/update/', views.ShiftTemplateUpdateView.as_view(), name='shift-template-update'),
+    path('templates/<int:pk>/delete/', views.ShiftTemplateDeleteView.as_view(), name='shift-template-delete'),
+    path('templates/<int:template_id>/items/new/', views.template_item_create, name='template-item-create'),
+    path('templates/items/<int:pk>/update/', views.template_item_update, name='template-item-update'),
+    path('templates/items/<int:pk>/delete/', views.template_item_delete, name='template-item-delete'),
+    path('templates/apply/', views.apply_template, name='apply-template'),
 ]
