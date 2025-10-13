@@ -32,29 +32,22 @@
         border-left-color: #0dcaf0;
         font-weight: 600;
     }
-    .print-btn {
+    .download-btn {
         display: inline-block;
     }
-    @media print {
-        .no-print {
-            display: none !important;
-        }
-        .shift-card {
-            break-inside: avoid;
-        }
-        body {
-            font-size: 12px;
-        }
+    #schedule-content {
+        background-color: white;
+        padding: 20px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+<div class="d-flex justify-content-between align-items-center mb-4 no-download">
     <h1>Weekly Schedule</h1>
     <div class="btn-group">
-        <button onclick="window.print()" class="btn btn-outline-primary print-btn">
-            <i class="bi bi-printer"></i> Print Schedule
+        <button onclick="downloadScheduleAsImage()" class="btn btn-outline-primary download-btn">
+            <i class="bi bi-download"></i> Download as Image
         </button>
         {% if user.is_staff or user.rank >= 4 %}
         <a href="{% url 'schedule-view' %}" class="btn btn-outline-secondary">
@@ -65,7 +58,7 @@
 </div>
 
 <!-- Date Range Filter -->
-<div class="card mb-4 no-print">
+<div class="card mb-4 no-download">
     <div class="card-header bg-light">
         <h5 class="card-title mb-0">Select Week</h5>
     </div>
@@ -86,20 +79,22 @@
     </div>
 </div>
 
-<!-- Schedule Header for Print -->
-<div class="d-none d-print-block text-center mb-4">
-    <h2>Work Schedule</h2>
-    <p class="text-muted">{{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }}</p>
-</div>
+<!-- Wrapper for downloadable content -->
+<div id="schedule-content">
+    <!-- Schedule Header -->
+    <div class="text-center mb-4">
+        <h2>Work Schedule</h2>
+        <p class="text-muted">{{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }}</p>
+    </div>
 
-{% if not shifts_by_date %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i>
-    No shifts scheduled for this period.
-</div>
-{% else %}
-<!-- Schedule Grid -->
-<div class="table-responsive">
+    {% if not shifts_by_date %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        No shifts scheduled for this period.
+    </div>
+    {% else %}
+    <!-- Schedule Grid -->
+    <div class="table-responsive">
     <div class="d-flex">
         {% for date, shift_list in shifts_by_date.items %}
         <div class="day-column">
@@ -147,17 +142,22 @@
     </div>
 </div>
 
-<!-- Legend -->
-<div class="card mt-4 no-print">
-    <div class="card-body">
-        <h6>Legend:</h6>
-        <ul class="mb-0">
-            <li><strong>Highlighted in blue:</strong> Your assigned shifts</li>
-            <li><strong>Start/End times:</strong> Shown in 24-hour format (HH:MM)</li>
-        </ul>
+    <!-- Legend -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h6>Legend:</h6>
+            <ul class="mb-0">
+                <li><strong>Highlighted in blue:</strong> Your assigned shifts</li>
+                <li><strong>Start/End times:</strong> Shown in 24-hour format (HH:MM)</li>
+            </ul>
+        </div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
+<!-- End of schedule-content wrapper -->
+
+<!-- html2canvas library for image download -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
 // Quick week navigation
@@ -180,5 +180,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Download schedule as image
+function downloadScheduleAsImage() {
+    const scheduleContent = document.getElementById('schedule-content');
+    const downloadBtn = document.querySelector('.download-btn');
+
+    // Disable button and show loading state
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+
+    // Hide elements that shouldn't be in the image
+    const elementsToHide = document.querySelectorAll('.no-download');
+    elementsToHide.forEach(el => el.style.display = 'none');
+
+    // Use html2canvas to capture the schedule
+    html2canvas(scheduleContent, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality image
+        logging: false,
+        useCORS: true,
+        allowTaint: true
+    }).then(canvas => {
+        // Convert canvas to blob
+        canvas.toBlob(function(blob) {
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const filename = `schedule_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = url;
+            link.download = filename;
+            link.click();
+
+            // Cleanup
+            URL.revokeObjectURL(url);
+
+            // Restore hidden elements
+            elementsToHide.forEach(el => el.style.display = '');
+
+            // Restore button state
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '<i class="bi bi-download"></i> Download as Image';
+        }, 'image/png');
+    }).catch(error => {
+        console.error('Error generating image:', error);
+        alert('Failed to generate image. Please try again.');
+
+        // Restore hidden elements
+        elementsToHide.forEach(el => el.style.display = '');
+
+        // Restore button state
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = '<i class="bi bi-download"></i> Download as Image';
+    });
+}
 </script>
 {% endblock %}
