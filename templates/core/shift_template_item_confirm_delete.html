@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Delete Template Item - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Delete Shift from Template</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+
+                <h5>Are you sure you want to remove this shift from the template?</h5>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Shift Details:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Template:</strong> {{ template.name }}</li>
+                            <li><strong>Day:</strong> {{ item.get_weekday_display }}</li>
+                            <li><strong>Shift Type:</strong> {{ item.shift_type.name }}</li>
+                            <li><strong>Time:</strong> {{ item.shift_type.start_time|time:"H:i" }} - {{ item.shift_type.end_time|time:"H:i" }}</li>
+                            <li><strong>Required Staff:</strong> {{ item.total_required_staff }}</li>
+                            {% if item.notes %}
+                            <li><strong>Notes:</strong> {{ item.notes }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <p class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        This will only remove the shift from the template. Existing shifts created from this template will not be affected.
+                    </p>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Remove Shift
+                        </button>
+                        <a href="{% url 'shift-template-detail' template.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

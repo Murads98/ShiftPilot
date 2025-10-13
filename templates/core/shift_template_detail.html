@@ -1,0 +1,106 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ template.name }} - ShiftPilot{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>{{ template.name }}</h1>
+        {% if template.is_active %}
+        <span class="badge bg-success">Active</span>
+        {% else %}
+        <span class="badge bg-secondary">Inactive</span>
+        {% endif %}
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'template-item-create' template.id %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Shift
+        </a>
+        <a href="{% url 'shift-template-update' template.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit Template
+        </a>
+        <a href="{% url 'shift-template-delete' template.id %}" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> Delete
+        </a>
+        <a href="{% url 'shift-template-list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+{% if template.description %}
+<div class="alert alert-light">
+    <strong>Description:</strong> {{ template.description }}
+</div>
+{% endif %}
+
+<div class="row">
+    {% for weekday_num, weekday_name in weekday_names.items %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <strong>{{ weekday_name }}</strong>
+            </div>
+            <div class="card-body">
+                {% with items_by_weekday|get_item:weekday_num as day_items %}
+                {% if day_items %}
+                    {% for item in day_items %}
+                    <div class="card mb-2 border-secondary">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ item.shift_type.name }}</strong><br>
+                                    <small class="text-muted">
+                                        {{ item.shift_type.start_time|time:"H:i" }} - {{ item.shift_type.end_time|time:"H:i" }}
+                                    </small><br>
+                                    <span class="badge bg-info mt-1">{{ item.total_required_staff }} staff</span>
+                                    {% if item.required_rank_1 or item.required_rank_2 or item.required_rank_3 or item.required_rank_4 %}
+                                    <br>
+                                    <small class="text-muted">
+                                        {% if item.required_rank_1 %}R1:{{ item.required_rank_1 }} {% endif %}
+                                        {% if item.required_rank_2 %}R2:{{ item.required_rank_2 }} {% endif %}
+                                        {% if item.required_rank_3 %}R3:{{ item.required_rank_3 }} {% endif %}
+                                        {% if item.required_rank_4 %}R4:{{ item.required_rank_4 }} {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'template-item-update' item.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'template-item-delete' item.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% if item.notes %}
+                            <small class="text-muted d-block mt-2">{{ item.notes }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center small mb-0">No shifts</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h6>Template Information</h6>
+        <ul class="mb-0">
+            <li><strong>Created:</strong> {{ template.created_at|date:"F j, Y, g:i a" }} by {{ template.created_by.get_full_name|default:template.created_by.username }}</li>
+            <li><strong>Last Updated:</strong> {{ template.updated_at|date:"F j, Y, g:i a" }}</li>
+            <li><strong>Total Shifts:</strong> {{ template.items.count }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info mt-3">
+    <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Use the "Apply Template" button to generate shifts from this template for any date range.
+</div>
+{% endblock %}
