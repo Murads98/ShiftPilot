@@ -1038,14 +1038,32 @@ def assignment_create(request, shift_id=None):
     if not is_manager(request.user):
         messages.error(request, 'Only managers can create assignments.')
         return redirect('dashboard')
-    
+
     initial_data = {}
+    shift = None
     if shift_id:
         shift = get_object_or_404(Shift, id=shift_id)
         initial_data['shift'] = shift
-    
+
     if request.method == 'POST':
         form = ShiftAssignmentForm(request.POST, initial=initial_data)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                assignment = form.save(commit=False)
+                assignment.assigned_by = request.user
+                assignment.save()
+                return JsonResponse({'success': True})
+            else:
+                modal_title = f'Assign Staff to {shift}' if shift else 'Create Assignment'
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': modal_title,
+                    'submit_text': 'Assign Staff'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request
         if form.is_valid():
             assignment = form.save(commit=False)
             assignment.assigned_by = request.user
@@ -1054,7 +1072,16 @@ def assignment_create(request, shift_id=None):
             return redirect('schedule-view')
     else:
         form = ShiftAssignmentForm(initial=initial_data)
-    
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            modal_title = f'Assign Staff to {shift}' if shift else 'Create Assignment'
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': modal_title,
+                'submit_text': 'Assign Staff'
+            }, request=request)
+            return JsonResponse({'html': html})
+
     return render(request, 'core/assignment_form.html', {
         'form': form,
         'shift': shift
@@ -1161,10 +1188,46 @@ class ShiftTemplateCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateVie
     def test_func(self):
         return is_manager(self.request.user)
 
-    def form_valid(self, form):
-        form.instance.created_by = self.request.user
-        messages.success(self.request, f'Template "{form.instance.name}" created successfully!')
-        return super().form_valid(form)
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': 'Create Shift Template',
+                'submit_text': 'Create Template'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                form.instance.created_by = request.user
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': 'Create Shift Template',
+                    'submit_text': 'Create Template'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request
+        if form.is_valid():
+            form.instance.created_by = request.user
+            messages.success(request, f'Template "{form.instance.name}" created successfully!')
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse('shift-template-detail', kwargs={'pk': self.object.pk})
@@ -1179,9 +1242,44 @@ class ShiftTemplateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
     def test_func(self):
         return is_manager(self.request.user)
 
-    def form_valid(self, form):
-        messages.success(self.request, f'Template "{form.instance.name}" updated successfully!')
-        return super().form_valid(form)
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': f'Edit Template: {self.object.name}',
+                'submit_text': 'Update Template'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': f'Edit Template: {self.object.name}',
+                    'submit_text': 'Update Template'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request
+        if form.is_valid():
+            messages.success(request, f'Template "{form.instance.name}" updated successfully!')
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse('shift-template-detail', kwargs={'pk': self.object.pk})
@@ -1215,6 +1313,22 @@ def template_item_create(request, template_id):
 
     if request.method == 'POST':
         form = ShiftTemplateItemForm(request.POST)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                item = form.save(commit=False)
+                item.template = template
+                item.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': f'Add Shift to {template.name}',
+                    'submit_text': 'Add Shift'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request
         if form.is_valid():
             item = form.save(commit=False)
             item.template = template
@@ -1223,6 +1337,14 @@ def template_item_create(request, template_id):
             return redirect('shift-template-detail', pk=template.id)
     else:
         form = ShiftTemplateItemForm()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': f'Add Shift to {template.name}',
+                'submit_text': 'Add Shift'
+            }, request=request)
+            return JsonResponse({'html': html})
 
     return render(request, 'core/shift_template_item_form.html', {
         'form': form,
@@ -1243,12 +1365,34 @@ def template_item_update(request, pk):
 
     if request.method == 'POST':
         form = ShiftTemplateItemForm(request.POST, instance=item)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                form.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': f'Edit Shift in {template.name}',
+                    'submit_text': 'Update Shift'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        # Normal request
         if form.is_valid():
             form.save()
             messages.success(request, 'Template item updated!')
             return redirect('shift-template-detail', pk=template.id)
     else:
         form = ShiftTemplateItemForm(instance=item)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': f'Edit Shift in {template.name}',
+                'submit_text': 'Update Shift'
+            }, request=request)
+            return JsonResponse({'html': html})
 
     return render(request, 'core/shift_template_item_form.html', {
         'form': form,

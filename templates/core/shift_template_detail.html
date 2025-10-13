@@ -13,10 +13,10 @@
         {% endif %}
     </div>
     <div class="btn-group">
-        <a href="{% url 'template-item-create' template.id %}" class="btn btn-primary">
+        <a href="{% url 'template-item-create' template.id %}" class="btn btn-primary" data-ajax-modal>
             <i class="bi bi-plus-circle"></i> Add Shift
         </a>
-        <a href="{% url 'shift-template-update' template.id %}" class="btn btn-outline-secondary">
+        <a href="{% url 'shift-template-update' template.id %}" class="btn btn-outline-secondary" data-ajax-modal>
             <i class="bi bi-pencil"></i> Edit Template
         </a>
         <a href="{% url 'shift-template-delete' template.id %}" class="btn btn-outline-danger">
@@ -74,7 +74,7 @@
                                 {% endif %}
                             </div>
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'template-item-update' item.id %}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{% url 'template-item-update' item.id %}" class="btn btn-sm btn-outline-secondary" data-ajax-modal>
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <a href="{% url 'template-item-delete' item.id %}" class="btn btn-sm btn-outline-danger">
