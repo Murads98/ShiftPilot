@@ -86,23 +86,22 @@
                                 <div class="calendar-date">{{ date|date:"D, M d" }}</div>
                                 
                                 {% for shift_info in shifts %}
-                                <div class="calendar-shift {% if shift_info.availability.availability_status == 'available' %}availability-available{% elif shift_info.availability.availability_status == 'prefer_not' %}availability-prefer-not{% elif shift_info.availability.availability_status == 'unavailable' %}availability-unavailable{% endif %}">
+                                <div class="calendar-shift {% if shift_info.availability and shift_info.availability.availability_status == 'available' %}availability-available{% elif shift_info.availability and shift_info.availability.availability_status == 'prefer_not' %}availability-prefer-not{% elif shift_info.availability and shift_info.availability.availability_status == 'unavailable' %}availability-unavailable{% endif %}">
                                     <div class="fw-bold">{{ shift_info.shift.shift_type.name }}</div>
                                     <div class="small text-muted">{{ shift_info.shift.shift_type.start_time|time:"H:i" }} - {{ shift_info.shift.shift_type.end_time|time:"H:i" }}</div>
-                                    
+
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <!-- Replace complex filter chain with hardcoded values -->
-                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_available" value="available" 
-                                                {% if shift_info.availability.availability_status == 'available' %}checked{% endif %} autocomplete="off">
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_available" value="available"
+                                                {% if shift_info.availability and shift_info.availability.availability_status == 'available' %}checked{% endif %} autocomplete="off">
                                             <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_available">Available</label>
-                                            
-                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_prefer_not" value="prefer_not" 
-                                                {% if shift_info.availability.availability_status == 'prefer_not' %}checked{% endif %} autocomplete="off">
+
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_prefer_not" value="prefer_not"
+                                                {% if shift_info.availability and shift_info.availability.availability_status == 'prefer_not' %}checked{% endif %} autocomplete="off">
                                             <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_prefer_not">Prefer Not</label>
-                                            
-                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_unavailable" value="unavailable" 
-                                                {% if shift_info.availability.availability_status == 'unavailable' %}checked{% endif %} autocomplete="off">
+
+                                            <input type="radio" class="btn-check" name="shift_{{ shift_info.shift.id }}" id="shift_{{ shift_info.shift.id }}_unavailable" value="unavailable"
+                                                {% if shift_info.availability and shift_info.availability.availability_status == 'unavailable' %}checked{% endif %} autocomplete="off">
                                             <label class="btn btn-outline-secondary" for="shift_{{ shift_info.shift.id }}_unavailable">Unavailable</label>
                                         </div>
                                     </div>
