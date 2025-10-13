@@ -475,9 +475,46 @@ class ShiftCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = ShiftForm
     template_name = 'core/shift_form.html'
     success_url = reverse_lazy('shift-list')
-    
+
     def test_func(self):
         return is_manager(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': 'Add New Shift',
+                'submit_text': 'Create Shift'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = None
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': 'Add New Shift',
+                    'submit_text': 'Create Shift'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class ShiftUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -489,6 +526,43 @@ class ShiftUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         return is_manager(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests - return form for AJAX or normal page"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string('core/modal_form.html', {
+                'form': form,
+                'modal_title': f'Edit Shift: {self.object.date} - {self.object.shift_type.name}',
+                'submit_text': 'Update Shift'
+            }, request=request)
+            return JsonResponse({'html': html})
+
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - return JSON for AJAX or normal redirect"""
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if form.is_valid():
+                self.object = form.save()
+                return JsonResponse({'success': True})
+            else:
+                html = render_to_string('core/modal_form.html', {
+                    'form': form,
+                    'modal_title': f'Edit Shift: {self.object.date} - {self.object.shift_type.name}',
+                    'submit_text': 'Update Shift'
+                }, request=request)
+                return JsonResponse({'success': False, 'html': html})
+
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class ShiftDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
