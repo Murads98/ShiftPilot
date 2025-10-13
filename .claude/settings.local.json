@@ -9,7 +9,11 @@
       "Bash(git push)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(dir:*)",
+      "Bash(venv\\Scripts\\python.exe:*)",
+      "Bash(venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []

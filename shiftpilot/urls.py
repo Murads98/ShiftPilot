@@ -25,7 +25,7 @@ urlpatterns = [
     
     # Authentication URLs
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='/', template_name='core/logout.html'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     
     # Include all URLs from the core app
     path('', include('core.urls')),

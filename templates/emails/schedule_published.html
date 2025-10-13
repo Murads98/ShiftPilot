@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #198754;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }
+        .schedule-info {
+            background-color: white;
+            padding: 20px;
+            border-left: 4px solid #198754;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .date-range {
+            font-size: 24px;
+            font-weight: bold;
+            color: #198754;
+            margin: 10px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #198754;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 New Schedule Published!</h1>
+    </div>
+    <div class="content">
+        <p>Hi {{ employee.first_name|default:employee.username }},</p>
+
+        <p>Great news! The schedule for the upcoming period has been published.</p>
+
+        <div class="schedule-info">
+            <p><strong>Schedule Period:</strong></p>
+            <div class="date-range">
+                {{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }}
+            </div>
+        </div>
+
+        <p>Please review your assigned shifts and make note of your schedule.</p>
+
+        <center>
+            <a href="{{ request.scheme }}://{{ request.get_host }}/schedule/published/" class="button">View Schedule</a>
+        </center>
+
+        <p><strong>Important:</strong> If you have any conflicts or concerns about your assigned shifts, please contact your manager as soon as possible.</p>
+
+        <p>
+            Best regards,<br>
+            <strong>ShiftPilot Management</strong>
+        </p>
+    </div>
+    <div class="footer">
+        This is an automated message from ShiftPilot. Please do not reply to this email.
+    </div>
+</body>
+</html>

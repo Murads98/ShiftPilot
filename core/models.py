@@ -222,3 +222,31 @@ class ShiftTemplateItem(models.Model):
     class Meta:
         ordering = ['weekday', 'shift_type__start_time']
         unique_together = ('template', 'weekday', 'shift_type')
+
+
+class EmailLog(models.Model):
+    """
+    Log of all emails sent by the system for tracking and audit purposes
+    """
+    EMAIL_TYPE_CHOICES = [
+        ('availability_reminder', 'Availability Reminder'),
+        ('availability_closed', 'Availability Period Closed'),
+        ('schedule_published', 'Schedule Published'),
+        ('shift_assigned', 'Shift Assignment'),
+        ('general', 'General Notification'),
+    ]
+
+    email_type = models.CharField(max_length=50, choices=EMAIL_TYPE_CHOICES)
+    subject = models.CharField(max_length=255)
+    recipient_email = models.EmailField()
+    recipient_name = models.CharField(max_length=255, blank=True)
+    sent_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='emails_sent')
+    sent_at = models.DateTimeField(auto_now_add=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.email_type} to {self.recipient_email} at {self.sent_at}"
+
+    class Meta:
+        ordering = ['-sent_at']
