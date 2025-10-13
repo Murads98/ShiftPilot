@@ -35,53 +35,62 @@
 {% endif %}
 
 <div class="row">
-    {% for weekday_num, weekday_name in weekday_names.items %}
+    {% for weekday_num in "0123456" %}
     <div class="col-md-6 col-lg-4 mb-3">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <strong>{{ weekday_name }}</strong>
+                <strong>
+                    {% if weekday_num == "0" %}Monday
+                    {% elif weekday_num == "1" %}Tuesday
+                    {% elif weekday_num == "2" %}Wednesday
+                    {% elif weekday_num == "3" %}Thursday
+                    {% elif weekday_num == "4" %}Friday
+                    {% elif weekday_num == "5" %}Saturday
+                    {% elif weekday_num == "6" %}Sunday
+                    {% endif %}
+                </strong>
             </div>
             <div class="card-body">
-                {% with items_by_weekday|get_item:weekday_num as day_items %}
-                {% if day_items %}
-                    {% for item in day_items %}
-                    <div class="card mb-2 border-secondary">
-                        <div class="card-body p-2">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong>{{ item.shift_type.name }}</strong><br>
-                                    <small class="text-muted">
-                                        {{ item.shift_type.start_time|time:"H:i" }} - {{ item.shift_type.end_time|time:"H:i" }}
-                                    </small><br>
-                                    <span class="badge bg-info mt-1">{{ item.total_required_staff }} staff</span>
-                                    {% if item.required_rank_1 or item.required_rank_2 or item.required_rank_3 or item.required_rank_4 %}
-                                    <br>
-                                    <small class="text-muted">
-                                        {% if item.required_rank_1 %}R1:{{ item.required_rank_1 }} {% endif %}
-                                        {% if item.required_rank_2 %}R2:{{ item.required_rank_2 }} {% endif %}
-                                        {% if item.required_rank_3 %}R3:{{ item.required_rank_3 }} {% endif %}
-                                        {% if item.required_rank_4 %}R4:{{ item.required_rank_4 }} {% endif %}
-                                    </small>
-                                    {% endif %}
-                                </div>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'template-item-update' item.id %}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'template-item-delete' item.id %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </div>
+                {% with weekday_int=weekday_num|add:"0" %}
+                {% for item in template.items.all %}
+                {% if item.weekday|stringformat:"s" == weekday_num %}
+                <div class="card mb-2 border-secondary">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ item.shift_type.name }}</strong><br>
+                                <small class="text-muted">
+                                    {{ item.shift_type.start_time|time:"H:i" }} - {{ item.shift_type.end_time|time:"H:i" }}
+                                </small><br>
+                                <span class="badge bg-info mt-1">{{ item.total_required_staff }} staff</span>
+                                {% if item.required_rank_1 or item.required_rank_2 or item.required_rank_3 or item.required_rank_4 %}
+                                <br>
+                                <small class="text-muted">
+                                    {% if item.required_rank_1 %}R1:{{ item.required_rank_1 }} {% endif %}
+                                    {% if item.required_rank_2 %}R2:{{ item.required_rank_2 }} {% endif %}
+                                    {% if item.required_rank_3 %}R3:{{ item.required_rank_3 }} {% endif %}
+                                    {% if item.required_rank_4 %}R4:{{ item.required_rank_4 }} {% endif %}
+                                </small>
+                                {% endif %}
                             </div>
-                            {% if item.notes %}
-                            <small class="text-muted d-block mt-2">{{ item.notes }}</small>
-                            {% endif %}
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'template-item-update' item.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'template-item-delete' item.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
                         </div>
+                        {% if item.notes %}
+                        <small class="text-muted d-block mt-2">{{ item.notes }}</small>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted text-center small mb-0">No shifts</p>
+                </div>
                 {% endif %}
+                {% empty %}
+                <p class="text-muted text-center small mb-0">No shifts</p>
+                {% endfor %}
                 {% endwith %}
             </div>
         </div>
