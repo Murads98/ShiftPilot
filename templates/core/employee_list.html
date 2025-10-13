@@ -42,6 +42,9 @@
                             <div class="btn-group btn-group-sm">
                                 <a href="{% url 'employee-detail' employee.id %}" class="btn btn-outline-primary">View</a>
                                 <a href="{% url 'employee-update' employee.id %}" class="btn btn-outline-secondary">Edit</a>
+                                {% if employee != user %}
+                                <a href="{% url 'employee-delete' employee.id %}" class="btn btn-outline-danger">Delete</a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

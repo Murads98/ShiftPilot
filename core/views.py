@@ -309,26 +309,38 @@ class ShiftTypeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         shift_type = self.get_object()
 
-        # Count shifts using this shift type
-        shifts_count = Shift.objects.filter(shift_type=shift_type).count()
+        # Count only future/current shifts using this shift type
+        today = timezone.now().date()
         future_shifts = Shift.objects.filter(
             shift_type=shift_type,
-            date__gte=timezone.now().date()
+            date__gte=today
         ).count()
 
-        context['shifts_count'] = shifts_count
+        # Count past shifts for information only
+        past_shifts = Shift.objects.filter(
+            shift_type=shift_type,
+            date__lt=today
+        ).count()
+
         context['future_shifts'] = future_shifts
+        context['past_shifts'] = past_shifts
         return context
 
     def post(self, request, *args, **kwargs):
         shift_type = self.get_object()
-        shifts_count = Shift.objects.filter(shift_type=shift_type).count()
+        today = timezone.now().date()
 
-        if shifts_count > 0:
+        # Only check for future/current shifts
+        future_shifts_count = Shift.objects.filter(
+            shift_type=shift_type,
+            date__gte=today
+        ).count()
+
+        if future_shifts_count > 0:
             messages.error(
                 request,
                 f'Cannot delete shift type "{shift_type.name}". '
-                f'It is being used by {shifts_count} shift(s). '
+                f'It is being used by {future_shifts_count} upcoming shift(s). '
                 f'Please delete or reassign those shifts first.'
             )
             return redirect('shift-type-list')

@@ -10,10 +10,10 @@
                 <h4 class="mb-0">Delete Shift Type</h4>
             </div>
             <div class="card-body">
-                {% if shifts_count > 0 %}
+                {% if future_shifts > 0 %}
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Cannot Delete!</strong> This shift type is currently in use.
+                    <strong>Cannot Delete!</strong> This shift type is being used by upcoming shifts.
                 </div>
 
                 <h5>Unable to delete shift type: <strong>{{ object.name }}</strong></h5>
@@ -21,9 +21,9 @@
                 <div class="alert alert-warning mt-4">
                     <h6>This shift type is being used by:</h6>
                     <ul class="mb-0">
-                        <li><strong>{{ shifts_count }}</strong> total shift(s)</li>
-                        {% if future_shifts > 0 %}
-                        <li><strong>{{ future_shifts }}</strong> upcoming shift(s)</li>
+                        <li><strong>{{ future_shifts }}</strong> upcoming/current shift(s)</li>
+                        {% if past_shifts > 0 %}
+                        <li><strong>{{ past_shifts }}</strong> past shift(s) (these don't prevent deletion)</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -32,9 +32,13 @@
                     To delete this shift type, you must first:
                 </p>
                 <ol>
-                    <li>Delete all shifts that use this shift type, OR</li>
+                    <li>Delete all upcoming shifts that use this shift type, OR</li>
                     <li>Reassign those shifts to a different shift type</li>
                 </ol>
+
+                <p class="text-muted">
+                    <small>Note: Past shifts using this type do not prevent deletion and will remain in the history.</small>
+                </p>
 
                 <div class="mt-4">
                     <a href="{% url 'shift-type-list' %}" class="btn btn-secondary">
@@ -70,7 +74,10 @@
                 <div class="alert alert-info mt-4">
                     <h6>After Deletion:</h6>
                     <ul class="mb-0">
-                        <li>This shift type will be permanently removed</li>
+                        <li>This shift type will be permanently removed from the system</li>
+                        {% if past_shifts > 0 %}
+                        <li><strong>{{ past_shifts }}</strong> past shift(s) that used this type will remain in the history</li>
+                        {% endif %}
                         <li>You can create a new shift type with the same name later if needed</li>
                     </ul>
                 </div>
