@@ -33,24 +33,28 @@ def is_manager(user):
 @login_required
 def dashboard(request):
     """Main dashboard view - shows different content based on user role"""
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
     # Get upcoming shifts for this user
     upcoming_shifts = ShiftAssignment.objects.filter(
         employee=request.user,
-        shift__date__gte=timezone.now().date()
+        shift__date__gte=today
     ).order_by('shift__date', 'shift__shift_type__start_time')[:5]
-    
+
     # Get pending availability requests
     pending_availability = Shift.objects.filter(
-        date__gte=timezone.now().date()
+        date__gte=today
     ).exclude(
         employee_availabilities__employee=request.user
     ).order_by('date', 'shift_type__start_time')[:5]
-    
+
     context = {
         'upcoming_shifts': upcoming_shifts,
         'pending_availability': pending_availability,
     }
-    
+
     # Add manager-specific data
     if is_manager(request.user):
         # Get recent schedule configurations
@@ -58,19 +62,144 @@ def dashboard(request):
 
         # Get shifts that need more staff (compare assignment count vs required)
         understaffed_shifts = Shift.objects.filter(
-            date__gte=timezone.now().date(),
+            date__gte=today,
             total_required_staff__gt=0
         ).annotate(
             assignment_count=Count('assignments')
         ).filter(
             assignment_count__lt=F('total_required_staff')
         ).order_by('date', 'shift_type__start_time')[:5]
-        
+
+        # === DASHBOARD STATISTICS ===
+
+        # Employee statistics
+        total_employees = Employee.objects.filter(is_active=True).count()
+        employees_by_rank = {}
+        for rank in [1, 2, 3, 4]:
+            employees_by_rank[rank] = Employee.objects.filter(is_active=True, rank=rank).count()
+
+        # Shift statistics (this week)
+        shifts_this_week = Shift.objects.filter(
+            date__gte=week_start,
+            date__lte=week_end
+        )
+        total_shifts_this_week = shifts_this_week.count()
+
+        # Assignment statistics (this week)
+        total_assignments_this_week = ShiftAssignment.objects.filter(
+            shift__in=shifts_this_week
+        ).count()
+
+        # Required staff this week
+        total_required_staff_this_week = sum(
+            shift.total_required_staff for shift in shifts_this_week
+        )
+
+        # Coverage percentage
+        coverage_percentage = 0
+        if total_required_staff_this_week > 0:
+            coverage_percentage = int(
+                (total_assignments_this_week / total_required_staff_this_week) * 100
+            )
+
+        # Upcoming shifts (next 30 days)
+        next_30_days = today + timedelta(days=30)
+        upcoming_shifts_count = Shift.objects.filter(
+            date__gte=today,
+            date__lte=next_30_days
+        ).count()
+
+        # Availability statistics (next 2 weeks)
+        next_14_days = today + timedelta(days=14)
+        shifts_next_14_days = Shift.objects.filter(
+            date__gte=today,
+            date__lte=next_14_days
+        )
+
+        total_availability_needed = shifts_next_14_days.count() * total_employees
+        total_availability_submitted = EmployeeAvailability.objects.filter(
+            shift__in=shifts_next_14_days
+        ).count()
+
+        availability_submission_rate = 0
+        if total_availability_needed > 0:
+            availability_submission_rate = int(
+                (total_availability_submitted / total_availability_needed) * 100
+            )
+
+        # Understaffed shifts count
+        understaffed_count = Shift.objects.filter(
+            date__gte=today,
+            total_required_staff__gt=0
+        ).annotate(
+            assignment_count=Count('assignments')
+        ).filter(
+            assignment_count__lt=F('total_required_staff')
+        ).count()
+
+        # Schedule configs by status
+        schedules_draft = ScheduleConfig.objects.filter(status='draft').count()
+        schedules_completed = ScheduleConfig.objects.filter(status='completed').count()
+        schedules_published = ScheduleConfig.objects.filter(status='published').count()
+
+        # Recent activity feed
+        recent_assignments = ShiftAssignment.objects.select_related(
+            'employee', 'shift__shift_type', 'assigned_by'
+        ).order_by('-created_at')[:10]
+
+        recent_schedule_configs = ScheduleConfig.objects.select_related(
+            'created_by'
+        ).order_by('-updated_at')[:5]
+
+        # Combine and sort by time
+        activity_feed = []
+
+        for assignment in recent_assignments:
+            activity_feed.append({
+                'type': 'assignment',
+                'timestamp': assignment.created_at,
+                'employee': assignment.employee,
+                'shift': assignment.shift,
+                'user': assignment.assigned_by,
+                'icon': 'person-plus-fill',
+                'color': 'success'
+            })
+
+        for config in recent_schedule_configs:
+            activity_feed.append({
+                'type': 'schedule',
+                'timestamp': config.updated_at,
+                'config': config,
+                'user': config.created_by,
+                'icon': 'calendar-check-fill' if config.status == 'published' else 'calendar3',
+                'color': 'primary' if config.status == 'published' else 'secondary'
+            })
+
+        # Sort by timestamp descending
+        activity_feed.sort(key=lambda x: x['timestamp'], reverse=True)
+        activity_feed = activity_feed[:15]  # Keep top 15 activities
+
         context.update({
             'recent_schedules': recent_schedules,
             'understaffed_shifts': understaffed_shifts,
+            # Statistics
+            'total_employees': total_employees,
+            'employees_by_rank': employees_by_rank,
+            'total_shifts_this_week': total_shifts_this_week,
+            'total_assignments_this_week': total_assignments_this_week,
+            'total_required_staff_this_week': total_required_staff_this_week,
+            'coverage_percentage': coverage_percentage,
+            'upcoming_shifts_count': upcoming_shifts_count,
+            'availability_submission_rate': availability_submission_rate,
+            'understaffed_count': understaffed_count,
+            'schedules_draft': schedules_draft,
+            'schedules_completed': schedules_completed,
+            'schedules_published': schedules_published,
+            'week_start': week_start,
+            'week_end': week_end,
+            'activity_feed': activity_feed,
         })
-    
+
     return render(request, 'core/dashboard.html', context)
 
 

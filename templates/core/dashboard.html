@@ -70,7 +70,106 @@
     </div>
     
     {% if user.is_staff or user.rank >= 4 %}
-    <!-- Manager Section -->
+    <!-- Manager Statistics -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Dashboard Statistics</h5>
+                <small>Week of {{ week_start|date:"M d" }} - {{ week_end|date:"M d, Y" }}</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Employee Count -->
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ total_employees }}</h3>
+                                <p class="text-muted mb-0">Active Employees</p>
+                                <small class="text-muted">
+                                    R1:{{ employees_by_rank.1 }} R2:{{ employees_by_rank.2 }}
+                                    R3:{{ employees_by_rank.3 }} R4:{{ employees_by_rank.4 }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- This Week's Shifts -->
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="bi bi-calendar-check-fill text-success" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ total_shifts_this_week }}</h3>
+                                <p class="text-muted mb-0">Shifts This Week</p>
+                                <small class="text-muted">{{ upcoming_shifts_count }} upcoming (30 days)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coverage Percentage -->
+                    <div class="col-md-3">
+                        <div class="card border-{% if coverage_percentage >= 80 %}success{% elif coverage_percentage >= 50 %}warning{% else %}danger{% endif %}">
+                            <div class="card-body text-center">
+                                <i class="bi bi-pie-chart-fill text-{% if coverage_percentage >= 80 %}success{% elif coverage_percentage >= 50 %}warning{% else %}danger{% endif %}" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ coverage_percentage }}%</h3>
+                                <p class="text-muted mb-0">Coverage This Week</p>
+                                <small class="text-muted">{{ total_assignments_this_week }}/{{ total_required_staff_this_week }} staff</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Understaffed Shifts -->
+                    <div class="col-md-3">
+                        <div class="card border-{% if understaffed_count == 0 %}success{% elif understaffed_count <= 5 %}warning{% else %}danger{% endif %}">
+                            <div class="card-body text-center">
+                                <i class="bi bi-exclamation-triangle-fill text-{% if understaffed_count == 0 %}success{% elif understaffed_count <= 5 %}warning{% else %}danger{% endif %}" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ understaffed_count }}</h3>
+                                <p class="text-muted mb-0">Understaffed Shifts</p>
+                                <small class="text-muted">Need attention</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability Submission Rate -->
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clipboard-check-fill text-info" style="font-size: 2rem;"></i>
+                                <h3 class="mt-2 mb-0">{{ availability_submission_rate }}%</h3>
+                                <p class="text-muted mb-0">Availability Submitted</p>
+                                <small class="text-muted">Next 14 days</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Configs -->
+                    <div class="col-md-8">
+                        <div class="card border-secondary">
+                            <div class="card-body">
+                                <h6 class="card-title">Schedule Configurations</h6>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <h4 class="mb-0">{{ schedules_draft }}</h4>
+                                        <small class="text-muted">Draft</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h4 class="mb-0">{{ schedules_completed }}</h4>
+                                        <small class="text-muted">Completed</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h4 class="mb-0">{{ schedules_published }}</h4>
+                                        <small class="text-muted">Published</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Tools Section -->
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header bg-success text-white">
@@ -175,6 +274,196 @@
             </div>
         </div>
     </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if activity_feed %}
+                <div class="list-group">
+                    {% for activity in activity_feed %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100">
+                            <div class="me-3">
+                                <i class="bi bi-{{ activity.icon }} text-{{ activity.color }}" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                {% if activity.type == 'assignment' %}
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Staff Assignment</h6>
+                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                </div>
+                                <p class="mb-1">
+                                    <strong>{{ activity.employee.get_full_name|default:activity.employee.username }}</strong>
+                                    assigned to
+                                    <strong>{{ activity.shift.shift_type.name }}</strong>
+                                    on {{ activity.shift.date|date:"M d, Y" }}
+                                </p>
+                                <small class="text-muted">
+                                    by {{ activity.user.get_full_name|default:activity.user.username }}
+                                </small>
+                                {% elif activity.type == 'schedule' %}
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Schedule {{ activity.config.status|title }}</h6>
+                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                </div>
+                                <p class="mb-1">
+                                    <strong>{{ activity.config.name }}</strong>
+                                    ({{ activity.config.start_date|date:"M d" }} - {{ activity.config.end_date|date:"M d, Y" }})
+                                </p>
+                                <small class="text-muted">
+                                    by {{ activity.user.get_full_name|default:activity.user.username }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No recent activity to display.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="col-12 mb-4">
+        <div class="row">
+            <!-- Coverage Chart -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Weekly Coverage Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="coverageChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Distribution Chart -->
+            <div class="col-lg-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Staff by Rank</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="rankDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 </div>
+
+{% if user.is_staff or user.rank >= 4 %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Coverage Progress Bar Chart
+const coverageCtx = document.getElementById('coverageChart');
+if (coverageCtx) {
+    const coveragePercentage = {{ coverage_percentage }};
+    const uncoveredPercentage = 100 - coveragePercentage;
+
+    new Chart(coverageCtx, {
+        type: 'bar',
+        data: {
+            labels: ['This Week'],
+            datasets: [{
+                label: 'Covered',
+                data: [{{ total_assignments_this_week }}],
+                backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Needed',
+                data: [{{ total_required_staff_this_week|add:"-"|add:total_assignments_this_week }}],
+                backgroundColor: 'rgba(220, 53, 69, 0.3)',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: {{ total_required_staff_this_week }},
+                    ticks: {
+                        stepSize: 5
+                    }
+                },
+                y: {
+                    stacked: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: '{{ total_assignments_this_week }}/{{ total_required_staff_this_week }} staff assigned (' + coveragePercentage + '%)'
+                }
+            }
+        }
+    });
+}
+
+// Rank Distribution Doughnut Chart
+const rankCtx = document.getElementById('rankDistributionChart');
+if (rankCtx) {
+    new Chart(rankCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Junior (R1)', 'Regular (R2)', 'Senior (R3)', 'Team Leader (R4)'],
+            datasets: [{
+                data: [
+                    {{ employees_by_rank.1 }},
+                    {{ employees_by_rank.2 }},
+                    {{ employees_by_rank.3 }},
+                    {{ employees_by_rank.4 }}
+                ],
+                backgroundColor: [
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    'rgba(13, 202, 240, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(108, 117, 125, 1)',
+                    'rgba(13, 110, 253, 1)',
+                    'rgba(13, 202, 240, 1)',
+                    'rgba(255, 193, 7, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Total: {{ total_employees }} employees'
+                }
+            }
+        }
+    });
+}
+</script>
+{% endif %}
 {% endblock %}
