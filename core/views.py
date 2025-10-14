@@ -145,7 +145,7 @@ def dashboard(request):
         # Recent activity feed
         recent_assignments = ShiftAssignment.objects.select_related(
             'employee', 'shift__shift_type', 'assigned_by'
-        ).order_by('-created_at')[:10]
+        ).order_by('-assigned_at')[:10]
 
         recent_schedule_configs = ScheduleConfig.objects.select_related(
             'created_by'
@@ -157,7 +157,7 @@ def dashboard(request):
         for assignment in recent_assignments:
             activity_feed.append({
                 'type': 'assignment',
-                'timestamp': assignment.created_at,
+                'timestamp': assignment.assigned_at,
                 'employee': assignment.employee,
                 'shift': assignment.shift,
                 'user': assignment.assigned_by,
