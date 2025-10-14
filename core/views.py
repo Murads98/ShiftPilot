@@ -149,7 +149,7 @@ def dashboard(request):
 
         recent_schedule_configs = ScheduleConfig.objects.select_related(
             'created_by'
-        ).order_by('-updated_at')[:5]
+        ).order_by('-created_at')[:5]
 
         # Combine and sort by time
         activity_feed = []
@@ -168,7 +168,7 @@ def dashboard(request):
         for config in recent_schedule_configs:
             activity_feed.append({
                 'type': 'schedule',
-                'timestamp': config.updated_at,
+                'timestamp': config.created_at,
                 'config': config,
                 'user': config.created_by,
                 'icon': 'calendar-check-fill' if config.status == 'published' else 'calendar3',
