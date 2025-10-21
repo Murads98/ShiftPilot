@@ -155,16 +155,6 @@ This project was developed as a final year project demonstrating:
 - Mobile-responsive design improvements
 - Export schedules to PDF/Excel
 
-## License
-
-This is an academic project developed for educational purposes.
-
 ## Author
 
-Morad - Final Year Project
-
-## Acknowledgments
-
-- Anthropic for Claude AI API
-- Django community for excellent documentation
-- [Add your university/professor if required]
+Murad Samara & Ameer Wattad - Final Year Project
