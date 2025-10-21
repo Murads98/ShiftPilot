@@ -115,10 +115,29 @@ class ShiftAssignment(models.Model):
     shift = models.ForeignKey(Shift, on_delete=models.CASCADE, related_name='assignments')
     assigned_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='shift_assignments_made')
     assigned_at = models.DateTimeField(auto_now_add=True)
-    
+
+    def clean(self):
+        """
+        Validate that an employee is not double-booked on the same day
+        """
+        super().clean()
+
+        if self.employee and self.shift:
+            # Check if employee is already assigned to another shift on the same day
+            same_day_assignment = ShiftAssignment.objects.filter(
+                employee=self.employee,
+                shift__date=self.shift.date
+            ).exclude(pk=self.pk).first()
+
+            if same_day_assignment:
+                raise ValidationError(
+                    f"{self.employee.get_full_name()} is already assigned to "
+                    f"{same_day_assignment.shift.shift_type.name} on {self.shift.date}"
+                )
+
     def __str__(self):
         return f"{self.employee} assigned to {self.shift}"
-    
+
     class Meta:
         unique_together = ('employee', 'shift')
 

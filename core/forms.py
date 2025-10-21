@@ -153,17 +153,17 @@ class ShiftAssignmentForm(forms.ModelForm):
             if existing:
                 raise ValidationError("This employee is already assigned to this shift")
 
-            # Check if employee is already assigned to another shift at the same time
-            same_time_shifts = Shift.objects.filter(
-                date=shift.date,
-                shift_type=shift.shift_type
-            ).exclude(id=shift.id)
+            # Check if employee is already assigned to ANY shift on the same day
+            same_day_assignment = ShiftAssignment.objects.filter(
+                employee=employee,
+                shift__date=shift.date
+            ).exclude(shift=shift).select_related('shift__shift_type').first()
 
-            for other_shift in same_time_shifts:
-                if ShiftAssignment.objects.filter(employee=employee, shift=other_shift).exists():
-                    raise ValidationError(
-                        f"This employee is already assigned to another shift at the same time: {other_shift}"
-                    )
+            if same_day_assignment:
+                raise ValidationError(
+                    f"This employee is already assigned to another shift on {shift.date}: "
+                    f"{same_day_assignment.shift.shift_type.name}"
+                )
 
             # Check if shift has specific rank requirements
             # Count how many employees of each rank are already assigned

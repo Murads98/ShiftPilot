@@ -13,7 +13,9 @@
       "Bash(python manage.py runserver:*)",
       "Bash(dir:*)",
       "Bash(venv\\Scripts\\python.exe:*)",
-      "Bash(venv/Scripts/python.exe:*)"
+      "Bash(venv/Scripts/python.exe:*)",
+      "Bash(python manage.py shell:*)",
+      "Bash(venvScriptspython.exe manage.py shell:*)"
     ],
     "deny": [],
     "ask": []

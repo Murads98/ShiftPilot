@@ -75,6 +75,7 @@ class ClaudeScheduler:
     2. Meet rank requirements for each shift
     3. Meet total staff requirements
     4. Distribute shifts fairly among employees
+    5. CRITICAL: Each employee can only be assigned to ONE shift per day (not multiple shifts on the same day)
 
     IMPORTANT: Use the shift ID numbers in your response, not dates!
 
