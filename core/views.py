@@ -1058,18 +1058,25 @@ def generate_schedule(request, config_id):
     if not is_manager(request.user):
         messages.error(request, 'Only managers can generate schedules.')
         return redirect('dashboard')
-    
+
     config = get_object_or_404(ScheduleConfig, id=config_id)
-    
+
     if config.status != 'draft':
         messages.error(request, 'This schedule has already been processed.')
         return redirect('schedule-config-list')
-    
+
+    # Check if start date is in the past
+    from django.utils import timezone
+    today = timezone.now().date()
+    if config.start_date < today:
+        messages.error(request, f'Cannot generate schedule: Start date ({config.start_date}) is in the past. Please create a new schedule with future dates.')
+        return redirect('schedule-config-list')
+
     try:
         # Update status to processing
         config.status = 'processing'
         config.save()
-        
+
         # Get shifts and employees for this schedule
         shifts = Shift.objects.filter(
             date__gte=config.start_date,

@@ -13,7 +13,15 @@
             <div class="card-body">
                 <form method="post" novalidate id="scheduleForm">
                     {% csrf_token %}
-                    
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
                     <div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label">Schedule Name</label>
                         {{ form.name }}
@@ -135,10 +143,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('scheduleForm');
     const modal = new bootstrap.Modal(document.getElementById('claudeLoadingModal'));
-    
+
     form.addEventListener('submit', function(e) {
-        // Show the loading modal immediately when form is submitted
-        modal.show();
+        // Only show the loading modal if form is valid
+        if (form.checkValidity()) {
+            modal.show();
+        }
     });
 });
 </script>

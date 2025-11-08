@@ -46,13 +46,25 @@ class ShiftForm(forms.ModelForm):
     """Form for creating/editing shifts"""
     class Meta:
         model = Shift
-        fields = ('date', 'shift_type', 'total_required_staff', 
-                 'required_rank_1', 'required_rank_2', 'required_rank_3', 'required_rank_4', 
+        fields = ('date', 'shift_type', 'total_required_staff',
+                 'required_rank_1', 'required_rank_2', 'required_rank_3', 'required_rank_4',
                  'notes')
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
-    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make rank fields optional and set initial value to 0
+        self.fields['required_rank_1'].required = False
+        self.fields['required_rank_1'].initial = 0
+        self.fields['required_rank_2'].required = False
+        self.fields['required_rank_2'].initial = 0
+        self.fields['required_rank_3'].required = False
+        self.fields['required_rank_3'].initial = 0
+        self.fields['required_rank_4'].required = False
+        self.fields['required_rank_4'].initial = 0
+
     def clean(self):
         cleaned_data = super().clean()
         total = cleaned_data.get('total_required_staff')
@@ -60,12 +72,18 @@ class ShiftForm(forms.ModelForm):
         r2 = cleaned_data.get('required_rank_2') or 0
         r3 = cleaned_data.get('required_rank_3') or 0
         r4 = cleaned_data.get('required_rank_4') or 0
-        
+
+        # Set default values if empty
+        cleaned_data['required_rank_1'] = r1
+        cleaned_data['required_rank_2'] = r2
+        cleaned_data['required_rank_3'] = r3
+        cleaned_data['required_rank_4'] = r4
+
         sum_by_rank = r1 + r2 + r3 + r4
-        
+
         if sum_by_rank > total:
             raise ValidationError("Sum of required staff by rank cannot exceed total required staff")
-        
+
         return cleaned_data
 
 
@@ -210,6 +228,18 @@ class ShiftTemplateItemForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make rank fields optional and set initial value to 0
+        self.fields['required_rank_1'].required = False
+        self.fields['required_rank_1'].initial = 0
+        self.fields['required_rank_2'].required = False
+        self.fields['required_rank_2'].initial = 0
+        self.fields['required_rank_3'].required = False
+        self.fields['required_rank_3'].initial = 0
+        self.fields['required_rank_4'].required = False
+        self.fields['required_rank_4'].initial = 0
+
     def clean(self):
         cleaned_data = super().clean()
         total = cleaned_data.get('total_required_staff')
@@ -217,6 +247,12 @@ class ShiftTemplateItemForm(forms.ModelForm):
         r2 = cleaned_data.get('required_rank_2') or 0
         r3 = cleaned_data.get('required_rank_3') or 0
         r4 = cleaned_data.get('required_rank_4') or 0
+
+        # Set default values if empty
+        cleaned_data['required_rank_1'] = r1
+        cleaned_data['required_rank_2'] = r2
+        cleaned_data['required_rank_3'] = r3
+        cleaned_data['required_rank_4'] = r4
 
         sum_by_rank = r1 + r2 + r3 + r4
 
